@@ -1,0 +1,7 @@
+library(pastecs)
+library(lm.beta)
+library(lmtest)
+
+data <- iris
+
+stat.desc(data$Sepal.Width)
