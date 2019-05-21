@@ -1,2 +1,6 @@
 # stats-modeling-in-R
-Part of the Summer Data Science Workshops hosted by Research Computing Services in 2019
+
+Andre Archer and Emilio Lehoucq
+
+This workshop is part of the Summer Data Science Workshops hosted by Research Computing Services at Northwestern University (2019).
+
