@@ -1,4 +1,4 @@
-# stats-modeling-in-R
+# Statistical Modeling in R
 
 Andre Archer and Emilio Lehoucq
 
