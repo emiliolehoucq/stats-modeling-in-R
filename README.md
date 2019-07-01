@@ -60,7 +60,7 @@ Students are expected to have knowledge of R and regression analysis.
 
 ## Hierarchical modeling
 
-Download the 6th wave of the World Values Survey. Read it in R.
+XX. Read the 6th wave of the World Values Survey in R.
 
 XX. In the same plot, graph the relation between people’s valuation of science and technology (V197) and their education (V248) for all countries (V2) in the survey. Treat education as a continuous variable.
 
