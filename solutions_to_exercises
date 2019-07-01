@@ -208,6 +208,8 @@ xyplot(V197 ~ V248 | as.factor(V2), wvs,
 
 rirs <- lmer(V197 ~ 1 + relevel(educ, ref = "2") + (1 + relevel(educ, ref = "2") | V2), data = wvs)
 summary(rirs)
+rirs_2 <- lme(V197 ~ 1 + relevel(educ, ref = "2"), random = ~ 1 + relevel(educ, ref = "2") | V2, data = wvs, na.action = na.exclude)
+summary(rirs_2)
 
 # XX
 
@@ -219,11 +221,15 @@ wvs$rel_grand_mean_centered <- wvs$V9 - mean(wvs$V9, na.rm=TRUE)
 
 fsltv <- lmer(V197 ~ 1 + relevel(educ, ref = "2") + rel_grand_mean_centered + (1 | V2), data = wvs)
 summary(fsltv)
+fsltv_2 <- lme(V197 ~ 1 + relevel(educ, ref = "2") + rel_grand_mean_centered, random = ~ 1 | V2, data = wvs, na.action = na.exclude)
+summary(fsltv_2)
 
 # XX
 
 rscli <- lmer(V197 ~ 1 + relevel(educ, ref = "2")*rel_grand_mean_centered + (0 + relevel(educ, ref = "2") |V2), data = wvs)
 summary(rscli)
+rscli_2 <- lme(V197 ~ 1 + relevel(educ, ref = "2")*rel_grand_mean_centered, random = ~ 0 + relevel(educ, ref = "2") | V2, data = wvs, na.action = na.exclude)
+summary(rscli_2)
 
 # XX
 
