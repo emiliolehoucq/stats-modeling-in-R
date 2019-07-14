@@ -5,6 +5,11 @@ library(foreign)
 library(lattice)
 library(lme4)
 library(nlme)
+library(survival)
+library(dplyr)
+library(ggfortify)
+library(survminer)
+library(rms)
 
 data <- iris
 
@@ -244,6 +249,85 @@ legend(5,0.9, c("logistic","loess smooth"), col=c("red", "green"), lty=c(1:2))
 
 exp(coef(logit))
 
+# Poisson and Quasi-Poisson Regression
+data(epil)
+summary(epil)
+df=epil[epil$V4 == 1,]
+df <- subset(df, select = -c(V4,period))
+
+sapply(df, class)
+ggplot(df,aes(x=df$y))+ 
+  geom_histogram(binwidth = 1, center = 0.5) +
+  scale_x_continuous(breaks=seq(1,max(df$y), by = 5))+
+  ylab("Count")+ xlab("data")+
+  ggtitle("Histogram plot of the number of epileptic seizures after the last 2 weeks")
+
+### get column names
+print(colnames(df))
+
+model = glm(y~ 1, family=poisson(link=log),data=df)
+summary(model)
+
+### get coefficients
+print(coef(model))
+
+### print fitted model values
+print(data.frame(df$y,model$fitted))
+
+### print model predictors 
+model$linear.predictors
+exp(model$linear.predictors)
+
+
+### Hypothesis test for goodness of fit
+print(1-pchisq(model$deviance,model$df.residual))
+
+#plot data comparison
+df_original = data.frame(data=df$y)
+df_fitted = data.frame(data=model$fitted)
+plot(df_original$data,df_fitted$data,ylabel='fit data',xlabel='original data')
+
+
+### add a Covariate to the fit -- treatment
+model = glm(y~ 1 +trt, family=poisson(link=log),df)
+summary(model)
+
+print(1-pchisq(model$deviance,model$df.residual))
+
+df_fitted = data.frame(data=model$fitted)
+df_fitted$name = "fitted"
+
+plot(df_original$data,df_fitted$data)
+
+
+### add a Covariate to the fit -- treatment, age
+model = glm(y ~ 1 +trt*age, family=poisson(link=log),df)
+summary(model)
+
+print(1-pchisq(model$deviance,model$df.residual))
+
+df_fitted = data.frame(data=model$fitted)
+df_fitted$name = "fitted"
+
+combined=rbind(df_original,df_fitted)
+
+plot(df_original$data,df_fitted$data)
+
+
+### Overdispersion might be present -- try Quasipossion  
+model = glm(y ~ 1 +trt*age, family=quasipoisson(link=log),df)
+summary(model)
+
+print(1-pchisq(model$deviance,model$df.residual))
+
+df_fitted = data.frame(data=model$fitted)
+df_fitted$name = "fitted"
+
+combined=rbind(df_original,df_fitted)
+
+plot(df_original$data,df_fitted$data)
+
+
 # Hierarchical modeling
 
 student_data <- read.csv("~/Downloads/hsb1.csv")
@@ -324,3 +408,130 @@ summary(logit_random_intercept_and_slope)
 specified_variance_covariance_matrix_for_random_effects <- lme(mathach ~ 1 + groupmeanSES*sm_ses_grandmean, random = ~ 1 + groupmeanSES | id, 
                                                                correlation = corAR1(), data = data) # just an example, not needed in this case (useful for growth curve models)!
 summary(specified_variance_covariance_matrix_for_random_effects)
+ 
+# Survival Analysis
+attach(colon)
+head(colon)
+
+sapply(colon,class)
+
+###Dichotomize age and nodes. Change data labels to factors
+
+colon_subset_recurrence = colon[colon$etype==1,]
+colon_subset_recurrence$age.ds = sapply(colon_subset_recurrence$age, function(x) ifelse(x > 60, 1, 0))
+colon_subset_recurrence$age.ds <- factor(colon_subset_recurrence$age.ds, levels= c("0","1"), labels=c("<60",">60"))
+colon_subset_recurrence$nodes.ds = sapply(colon_subset_recurrence$nodes, function(x) ifelse(x > 3, 1, 0))
+colon_subset_recurrence$nodes.ds <- factor(colon_subset_recurrence$nodes.ds, levels= c("0","1"), labels=c("<3",">3"))
+
+colon_subset_recurrence$sex <- factor(colon_subset_recurrence$sex, levels= c("0","1"), labels=c("F","M"))
+colon_subset_recurrence$obstruct <- factor(colon_subset_recurrence$obstruct,levels= c("0","1"), labels=c("no obstruct","obstruct"))
+colon_subset_recurrence$adhere <- factor(colon_subset_recurrence$adhere,levels= c("0","1"), labels=c("no adhere","adhere"))
+
+colon_subset_recurrence$perfor <- factor(colon_subset_recurrence$perfor, levels= c("0","1"), labels=c("no perfor","perfor"))
+colon_subset_recurrence$differ <- factor(colon_subset_recurrence$differ, levels= c("1","2","3"), labels=c("well","mod","poor"))
+colon_subset_recurrence$extent <- factor(colon_subset_recurrence$extent,  levels= c("1","2","3","4"),
+                                         labels=c("submucosa", "muscle", "serosa", "contiguous"))
+colon_subset_recurrence$surg <- factor(colon_subset_recurrence$surg,levels= c("0","1"), 
+                                       labels=c("short","long"))
+head(colon_subset_recurrence)
+
+surv <-with(colon_subset_recurrence, Surv(time,status))
+
+# Kalpan-Meier
+km_fit <- survfit(surv~1, data=colon_subset_recurrence)
+summary(km_fit)
+autoplot(km_fit)
+ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE)
+
+km_fit <- survfit(surv~1 + obstruct, data=colon_subset_recurrence)
+summary(km_fit)
+ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,conf.int = TRUE,
+           risk.table = TRUE, ggtheme = theme_bw(),risk.table.col = "strata")
+
+km_fit <- survfit(surv~1 + adhere, data=colon_subset_recurrence)
+summary(km_fit)
+ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,conf.int = TRUE)
+
+km_fit <- survfit(surv~1 + adhere + obstruct, data=colon_subset_recurrence)
+summary(km_fit)
+ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,
+           conf.int = TRUE)
+
+km_fit <- survfit(surv~1 + nodes.ds + obstruct, data=colon_subset_recurrence)
+summary(km_fit)
+ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,
+           conf.int = TRUE)
+
+km_fit <- survfit(surv~1 + nodes.ds + obstruct + adhere, data=colon_subset_recurrence)
+summary(km_fit)
+ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,
+           conf.int = TRUE)
+
+#Cox Proportional Hazard
+cox <- coxph(Surv(time,status) ~ 1 + obstruct, data=colon_subset_recurrence)
+ggadjustedcurves(cox,data=colon_subset_recurrence,variable="obstruct",conf.int = TRUE)
+summary(cox)
+coef(cox)
+test.ph <- cox.zph(cox)
+test.ph
+ggforest(cox, data = colon_subset_recurrence)
+
+
+cox <- coxph(Surv(time,status) ~ 1 + obstruct + adhere, data=colon_subset_recurrence)
+summary(cox)
+coef(cox)
+ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "obstruct",conf.int = TRUE)
+ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "adhere",conf.int = TRUE)
+ggforest(cox, data = colon_subset_recurrence)
+test.ph <- cox.zph(cox)
+test.ph
+
+cox <- coxph(Surv(time,status) ~ 1 + obstruct + adhere + nodes.ds, data=colon_subset_recurrence)
+summary(cox)
+coef(cox)
+ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "obstruct",conf.int = TRUE)
+ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "adhere",conf.int = TRUE)
+ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "nodes.ds",conf.int = TRUE)
+ggforest(cox, data = colon_subset_recurrence)
+test.ph <- cox.zph(cox)
+test.ph
+
+cox <- coxph(Surv(time,status) ~ 1 + obstruct + adhere + nodes.ds + extent, data=colon_subset_recurrence)
+summary(cox)
+coef(cox)
+ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "obstruct",conf.int = TRUE)
+ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "adhere",conf.int = TRUE)
+ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "nodes.ds",conf.int = TRUE)
+ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "extent",conf.int = TRUE)
+ggforest(cox, data = colon_subset_recurrence)
+test.ph <- cox.zph(cox)
+test.ph
+
+### create a new subject and see their survival curve
+
+subject_one <- data.frame(obstruct = factor('no obstruct'), adhere = factor('adhere'), nodes.ds = factor('<3'), 
+                          extent=factor('serosa'))
+prediction_one <- survfit(cox, subject_one, data = colon_subset_recurrence)
+ggsurvplot(prediction_one, ylab = "No recurrence probability")
+ggsurvplot(prediction_one, fun="cumhaz")
+
+td.coxph <- time.dep.coxph(burn, 'T1', 'D1', 2:4, 'Z1', verbose=F)
+
+# Aalen's additive regression model
+
+aa_fit <- aareg(surv ~1 + obstruct + adhere + nodes.ds + surg + rx + age, data = colon_subset_recurrence)
+autoplot(aa_fit)
+summary(aa_fit)
+
+#Accelerated failure time models
+
+sr_fit = survreg(surv ~ 1 + obstruct + adhere + nodes.ds, dist="weibull",data=colon_subset_recurrence)
+summary(sr_fit)
+
+### create a new subject and see their survival curve
+
+subject_two = list(obstruct = factor('no obstruct'), adhere = factor('adhere'), nodes.ds = factor('<3'))
+prediction_two = survfit(sr_fit, subject_two, data = colon_subset_recurrence)
+plot(predict(sr_fit, newdata=subject_two,type="quantile",p=seq(.01,.99,by=.01)),seq(.99,.01,by=-.01),
+     col="red",type='l',xlab='time',ylab='Survival probability',main='Weibull')
+detach(colon)
