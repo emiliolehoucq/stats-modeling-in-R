@@ -205,8 +205,7 @@ leverage[X_out] # Here there's no outlying X observations
 plot(case, cooks.distance(ols_quadratic), type="l", xlab="Case Numbers", 
      ylab="Cook's Distance", main = "Test for Influential Values: Cook's Distance")
 text(case, cooks.distance(ols_quadratic))
-```
-```{r, echo=TRUE}
+
 inf_obs <- which(cooks.distance(ols_quadratic)>0.5)
 inf_obs
 
@@ -215,8 +214,7 @@ inf_obs
 plot(case, dffits(ols_quadratic), type="l", xlab="Case Numbers", 
      ylab="DFFITS", main = "Test for Influential Values: DFFITS")
 text(case, dffits(ols_quadratic))
-```
-```{r, echo=TRUE}
+
 inf_obs2 <- which(abs(dffits(ols_quadratic))>2/sqrt(p/n))
 inf_obs2
 
