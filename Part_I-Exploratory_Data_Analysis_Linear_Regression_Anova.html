@@ -328,11 +328,11 @@ points(data[data$Species == &quot;virginica&quot;, ]$Sepal.Length,
 <div id="linear-regression" class="section level1">
 <h1>Linear regression</h1>
 <p>Given a response variable, <span class="math inline">\(y\)</span>, explanatory variables, <span class="math inline">\(X_i\)</span>, and assuming that</p>
-<p><span class="math display">\[ y = \beta_0 +\beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_n X_n +\varepsilon,\]</span></p>
+<p><span class="math display">\[ y_i = \beta_0 +\beta_1 X_{1i} + \beta_2 X_{2i} + \cdots + \beta_n X_{ni} +\varepsilon\]</span></p>
 <p>where <span class="math inline">\(\varepsilon\)</span> is a noise term, linear regression attempts the find the coefficients <span class="math inline">\(\beta_i\)</span> that makes <span class="math inline">\(\varepsilon\)</span> as small as possible.</p>
 <p>The formula above assumes that response variable is a linear function explanatory variables. The noise term is added to account for the fact that most data is noisy and will not perfectly fit its ‘true’ function.</p>
 <p>Linear regression also assumes that the noise is normally distributed with zero mean.</p>
-<p>If these two assumptions are voilated then <span class="math display">\[r = y - \beta_0 +\beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_n X_n\]</span></p>
+<p>If these two assumptions are voilated then <span class="math display">\[r_i = y_i - \beta_0 +\beta_1 X_{1i} + \beta_2 X_{2i} + \cdots + \beta_n X_{ni}\]</span></p>
 <p>and <span class="math inline">\(\sum_{i=1}^m r_i^2\)</span> is generally a large number. <span class="math inline">\(\sum_{i=1}^m r_i^2\)</span> is called the residual standard error.</p>
 <div id="linear-regression-syntax" class="section level2">
 <h2>Linear regression syntax</h2>
@@ -456,6 +456,9 @@ abline(coefs[4] +coefs[1],coefs[2],col='blue')</code></pre>
 </div>
 <div id="advanced-syntax-nonlinear-regression" class="section level3">
 <h3>Advanced Syntax: Nonlinear Regression</h3>
+<p>The <code>lm</code> function can be extended to nonlinear functions. For example, it possible include a quadratic term in our model.</p>
+<p><span class="math display">\[\text{Sepal.Width} = \beta_1\text{Sepal.Length} + \beta_2\text{Sepal.Length}^2  + \varepsilon\]</span></p>
+<p>To add a quadratic term to the model, add <code>I(Sepal.Length^2)</code> to the left side of the tilde, <code>~</code>.</p>
 <pre class="r"><code>ols_quadratic &lt;- lm(Sepal.Width ~ Sepal.Length + I(Sepal.Length^2), data = data)
 summary(ols_quadratic)</code></pre>
 <pre><code>## 
@@ -478,9 +481,12 @@ summary(ols_quadratic)</code></pre>
 ## Residual standard error: 0.4304 on 147 degrees of freedom
 ## Multiple R-squared:  0.03783,    Adjusted R-squared:  0.02474 
 ## F-statistic:  2.89 on 2 and 147 DF,  p-value: 0.05877</code></pre>
+<p>It is also possible to include higher order nonlinear terms, such as cubic, quintic, etc.</p>
 </div>
 <div id="advanced-syntax-interaction-term" class="section level3">
 <h3>Advanced Syntax: Interaction term</h3>
+<p>It is also possible to include model interaction between explanatory variables.</p>
+<p><span class="math display">\[\text{Sepal.Width} = \beta_1\text{Sepal.Length} + \beta_2\text{Petal.Length} + \beta_3 \text{Sepal.Length}\times\text{Petal.Length} + \varepsilon\]</span> <span class="math inline">\(\text{Sepal.Length}\times\text{Petal.Length}\)</span> models simple interaction between Sepal.Length and Petal.Length.</p>
 <pre class="r"><code>ols_interaction &lt;- lm(Sepal.Width ~ Sepal.Length + Petal.Length + Sepal.Length*Petal.Length, data = data)
 summary(ols_interaction)</code></pre>
 <pre><code>## 
@@ -568,6 +574,9 @@ summary(ols_q_i)</code></pre>
 </div>
 <div id="obtaining-the-residuals" class="section level2">
 <h2>Obtaining the residuals</h2>
+<p>Recall it is possible the measure the error between the model and response variables. Given least squares fit,</p>
+<p><span class="math display">\[r_i = y_i - \beta_0 +\beta_1 X_{1i} + \beta_2 X_{2i} + \cdots + \beta_n X_{ni}\]</span> r is the residual vector and <span class="math inline">\(\sum_{i=1}^m r_i^2\)</span> is the residual standard error.</p>
+<p>It is possible to obtain residuals from the output of <code>lm</code></p>
 <pre class="r"><code>res &lt;- ols$residuals
 head(res)</code></pre>
 <pre><code>##           1           2           3           4           5           6 
@@ -575,6 +584,7 @@ head(res)</code></pre>
 </div>
 <div id="obtaining-the-fitted-values" class="section level2">
 <h2>Obtaining the fitted values</h2>
+<p>It is also possible to get predicted model values from the output of <code>lm</code>.</p>
 <pre class="r"><code>pred &lt;- ols$fitted.values
 head(data.frame(pred=pred,orig=data$Sepal.Width ))</code></pre>
 <pre><code>##       pred orig
@@ -584,6 +594,322 @@ head(data.frame(pred=pred,orig=data$Sepal.Width ))</code></pre>
 ## 4 3.285949  3.1
 ## 5 3.425901  3.6
 ## 6 3.565853  3.9</code></pre>
+</div>
+<div id="obtaining-the-anova-table" class="section level2">
+<h2>Obtaining the ANOVA table</h2>
+<pre class="r"><code>anova(ols)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Response: Sepal.Width
+##                     Df  Sum Sq Mean Sq F value  Pr(&gt;F)    
+## Sepal.Length         1  0.3913  0.3913  4.6851 0.03205 *  
+## as.factor(Species)   2 15.7225  7.8613 94.1304 &lt; 2e-16 ***
+## Residuals          146 12.1931  0.0835                    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div id="obtaining-the-variance-covariance-matrix" class="section level2">
+<h2>Obtaining the variance-covariance matrix</h2>
+<pre class="r"><code>vcov(ols)</code></pre>
+<pre><code>##                               (Intercept) Sepal.Length
+## (Intercept)                   0.055394200 -0.010731903
+## Sepal.Length                 -0.010731903  0.002143808
+## as.factor(Species)versicolor  0.008310378 -0.001993742
+## as.factor(Species)virginica   0.015307579 -0.003391504
+##                              as.factor(Species)versicolor
+## (Intercept)                                   0.008310378
+## Sepal.Length                                 -0.001993742
+## as.factor(Species)versicolor                  0.005194764
+## as.factor(Species)virginica                   0.004824391
+##                              as.factor(Species)virginica
+## (Intercept)                                  0.015307579
+## Sepal.Length                                -0.003391504
+## as.factor(Species)versicolor                 0.004824391
+## as.factor(Species)virginica                  0.008705945</code></pre>
+</div>
+<div id="obtaining-confidence-intervals-for-the-coefficients" class="section level2">
+<h2>Obtaining confidence intervals for the coefficients</h2>
+<pre class="r"><code>confint(ols, level = 0.95)</code></pre>
+<pre><code>##                                   2.5 %     97.5 %
+## (Intercept)                   1.2113479  2.1416523
+## Sepal.Length                  0.2583728  0.4413874
+## as.factor(Species)versicolor -1.1258331 -0.8409440
+## as.factor(Species)virginica  -1.1919146 -0.8231061</code></pre>
+</div>
+<div id="obtaining-confidence-interval-of-the-mean-response" class="section level2">
+<h2>Obtaining confidence interval of the mean response</h2>
+<pre class="r"><code>predict(ols, data.frame(Sepal.Length=4.0, Species=&quot;setosa&quot;), interval=&quot;confidence&quot;, level = 0.95, se.fit=TRUE)</code></pre>
+<pre><code>## $fit
+##        fit      lwr      upr
+## 1 3.076021 2.953552 3.198489
+## 
+## $se.fit
+## [1] 0.06196695
+## 
+## $df
+## [1] 146
+## 
+## $residual.scale
+## [1] 0.288989</code></pre>
+</div>
+<div id="obtaining-prediction-limits-for-new-observation" class="section level2">
+<h2>Obtaining prediction limits for new observation</h2>
+<pre class="r"><code>predict(ols, data.frame(Sepal.Length=4.0, Species=&quot;setosa&quot;),  interval=&quot;prediction&quot;, level = 0.95, se.fit=TRUE)</code></pre>
+<pre><code>## $fit
+##        fit      lwr      upr
+## 1 3.076021 2.491896 3.660145
+## 
+## $se.fit
+## [1] 0.06196695
+## 
+## $df
+## [1] 146
+## 
+## $residual.scale
+## [1] 0.288989</code></pre>
+</div>
+<div id="obtaining-confidence-band-for-the-entire-regression-line" class="section level2">
+<h2>Obtaining confidence band for the entire regression line</h2>
+<pre class="r"><code>alpha = 0.05
+n = dim(iris)[1]
+ci &lt;- predict(ols, data.frame(Sepal.Length=4.0, Species=&quot;setosa&quot;), interval=&quot;confidence&quot;, level= 1-alpha, se.fit=TRUE)
+yh.hat &lt;- ci$fit[1]
+se.yh.hat &lt;- ci$se.fit
+w &lt;- sqrt(2*qf(1-alpha, 2, n-2))
+lower_bound &lt;- yh.hat - w*se.yh.hat
+upper_bound &lt;- yh.hat + w*se.yh.hat
+band &lt;- c(lower_bound, upper_bound)
+band</code></pre>
+<pre><code>## [1] 2.922793 3.229248</code></pre>
+</div>
+<div id="standardized-regression" class="section level2">
+<h2>Standardized regression</h2>
+<pre class="r"><code>lm.beta(ols)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Sepal.Width ~ 1 + Sepal.Length + as.factor(Species), 
+##     data = data)
+## 
+## Standardized Coefficients::
+##                  (Intercept)                 Sepal.Length 
+##                    0.0000000                    0.6647082 
+## as.factor(Species)versicolor  as.factor(Species)virginica 
+##                   -1.0671319                   -1.0933079</code></pre>
+</div>
+</div>
+<div id="model-selection" class="section level1">
+<h1>Model selection</h1>
+<div id="general-linear-test-approach" class="section level2">
+<h2>General linear test approach</h2>
+<pre class="r"><code>anova(ols_q_i, ols_interaction)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: Sepal.Width ~ Sepal.Length * as.factor(Species) + I(Sepal.Length^2)
+## Model 2: Sepal.Width ~ Sepal.Length * Petal.Length
+##   Res.Df    RSS Df Sum of Sq      F    Pr(&gt;F)    
+## 1    143 10.595                                  
+## 2    146 15.316 -3   -4.7219 21.245 1.939e-11 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>anova(ols_q_i, ols_quadratic)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: Sepal.Width ~ Sepal.Length * as.factor(Species) + I(Sepal.Length^2)
+## Model 2: Sepal.Width ~ Sepal.Length + I(Sepal.Length^2)
+##   Res.Df    RSS Df Sum of Sq      F    Pr(&gt;F)    
+## 1    143 10.595                                  
+## 2    147 27.236 -4   -16.642 56.155 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>anova(ols_quadratic, ols)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: Sepal.Width ~ Sepal.Length + I(Sepal.Length^2)
+## Model 2: Sepal.Width ~ 1 + Sepal.Length + as.factor(Species)
+##   Res.Df    RSS Df Sum of Sq      F    Pr(&gt;F)    
+## 1    147 27.236                                  
+## 2    146 12.193  1    15.043 180.12 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>anova(ols_interaction, ols)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Model 1: Sepal.Width ~ Sepal.Length * Petal.Length
+## Model 2: Sepal.Width ~ 1 + Sepal.Length + as.factor(Species)
+##   Res.Df    RSS Df Sum of Sq F Pr(&gt;F)
+## 1    146 15.316                      
+## 2    146 12.193  0    3.1234</code></pre>
+</div>
+<div id="aic-bic-and-adjusted-r2" class="section level2">
+<h2>AIC, BIC, and Adjusted R2</h2>
+<pre class="r"><code>aic &lt;- c(AIC(ols_quadratic), AIC(ols_interaction))
+bic &lt;- c(BIC(ols_quadratic), BIC(ols_interaction))
+ar2 &lt;- c(summary(ols_quadratic)$adj.r.squared, summary(ols_interaction)$adj.r.squared)
+cbind(aic, bic, ar2)</code></pre>
+<pre><code>##            aic      bic       ar2
+## [1,] 177.76821 189.8107 0.0247357
+## [2,]  93.42623 108.4794 0.4477939</code></pre>
+</div>
+<div id="step-wise-selection" class="section level2">
+<h2>Step wise selection</h2>
+<pre class="r"><code>base &lt;- lm(Sepal.Width ~ 1, data=data)
+retailer_quadratic &lt;- lm(Sepal.Width ~ . + I(Sepal.Length^2), data=data)
+retailer_interaction &lt;- lm(Sepal.Width ~ . + Sepal.Length*Species, data=data)
+step_1 &lt;- step(base, scope = list(upper=retailer_quadratic, lower= ~1), direction = &quot;both&quot;, trace=TRUE)</code></pre>
+<pre><code>## Start:  AIC=-248.13
+## Sepal.Width ~ 1
+## 
+##                     Df Sum of Sq    RSS     AIC
+## + Species            2   11.3449 16.962 -320.95
+## + Petal.Length       1    5.1960 23.111 -276.55
+## + Petal.Width        1    3.7945 24.512 -267.72
+## + Sepal.Length       1    0.3913 27.916 -248.22
+## &lt;none&gt;                           28.307 -248.13
+## + I(Sepal.Length^2)  1    0.3115 27.995 -247.79
+## 
+## Step:  AIC=-320.95
+## Sepal.Width ~ Species
+## 
+##                     Df Sum of Sq    RSS     AIC
+## + Sepal.Length       1    4.7689 12.193 -368.46
+## + I(Sepal.Length^2)  1    4.1911 12.771 -361.52
+## + Petal.Width        1    3.7554 13.207 -356.49
+## + Petal.Length       1    2.4225 14.540 -342.07
+## &lt;none&gt;                           16.962 -320.95
+## - Species            2   11.3449 28.307 -248.13
+## 
+## Step:  AIC=-368.46
+## Sepal.Width ~ Species + Sepal.Length
+## 
+##                     Df Sum of Sq    RSS     AIC
+## + Petal.Width        1    1.5037 10.689 -386.21
+## + I(Sepal.Length^2)  1    1.2775 10.916 -383.07
+## &lt;none&gt;                           12.193 -368.46
+## + Petal.Length       1    0.0210 12.172 -366.72
+## - Sepal.Length       1    4.7689 16.962 -320.95
+## - Species            2   15.7225 27.916 -248.22
+## 
+## Step:  AIC=-386.21
+## Sepal.Width ~ Species + Sepal.Length + Petal.Width
+## 
+##                     Df Sum of Sq     RSS     AIC
+## + I(Sepal.Length^2)  1    1.0942  9.5952 -400.41
+## + Petal.Length       1    0.3619 10.3275 -389.37
+## &lt;none&gt;                           10.6894 -386.21
+## - Petal.Width        1    1.5037 12.1931 -368.46
+## - Sepal.Length       1    2.5171 13.2066 -356.49
+## - Species            2   10.9932 21.6826 -284.12
+## 
+## Step:  AIC=-400.41
+## Sepal.Width ~ Species + Sepal.Length + Petal.Width + I(Sepal.Length^2)
+## 
+##                     Df Sum of Sq     RSS     AIC
+## &lt;none&gt;                            9.5952 -400.41
+## + Petal.Length       1    0.0648  9.5305 -399.42
+## - I(Sepal.Length^2)  1    1.0942 10.6894 -386.21
+## - Petal.Width        1    1.3204 10.9156 -383.07
+## - Sepal.Length       1    1.4978 11.0931 -380.65
+## - Species            2   12.0842 21.6794 -282.14</code></pre>
+<pre class="r"><code>step_2 &lt;- step(base, scope = list(upper=retailer_interaction, lower= ~1), direction = &quot;both&quot;, trace=TRUE)</code></pre>
+<pre><code>## Start:  AIC=-248.13
+## Sepal.Width ~ 1
+## 
+##                Df Sum of Sq    RSS     AIC
+## + Species       2   11.3449 16.962 -320.95
+## + Petal.Length  1    5.1960 23.111 -276.55
+## + Petal.Width   1    3.7945 24.512 -267.72
+## + Sepal.Length  1    0.3913 27.916 -248.22
+## &lt;none&gt;                      28.307 -248.13
+## 
+## Step:  AIC=-320.95
+## Sepal.Width ~ Species
+## 
+##                Df Sum of Sq    RSS     AIC
+## + Sepal.Length  1    4.7689 12.193 -368.46
+## + Petal.Width   1    3.7554 13.207 -356.49
+## + Petal.Length  1    2.4225 14.540 -342.07
+## &lt;none&gt;                      16.962 -320.95
+## - Species       2   11.3449 28.307 -248.13
+## 
+## Step:  AIC=-368.46
+## Sepal.Width ~ Species + Sepal.Length
+## 
+##                        Df Sum of Sq    RSS     AIC
+## + Petal.Width           1    1.5037 10.689 -386.21
+## + Sepal.Length:Species  2    1.5132 10.680 -384.34
+## &lt;none&gt;                              12.193 -368.46
+## + Petal.Length          1    0.0210 12.172 -366.72
+## - Sepal.Length          1    4.7689 16.962 -320.95
+## - Species               2   15.7225 27.916 -248.22
+## 
+## Step:  AIC=-386.21
+## Sepal.Width ~ Species + Sepal.Length + Petal.Width
+## 
+##                        Df Sum of Sq    RSS     AIC
+## + Sepal.Length:Species  2    1.6924  8.997 -408.06
+## + Petal.Length          1    0.3619 10.328 -389.37
+## &lt;none&gt;                              10.689 -386.21
+## - Petal.Width           1    1.5037 12.193 -368.46
+## - Sepal.Length          1    2.5171 13.207 -356.49
+## - Species               2   10.9932 21.683 -284.12
+## 
+## Step:  AIC=-408.06
+## Sepal.Width ~ Species + Sepal.Length + Petal.Width + Species:Sepal.Length
+## 
+##                        Df Sum of Sq     RSS     AIC
+## &lt;none&gt;                               8.9970 -408.06
+## + Petal.Length          1   0.00785  8.9892 -406.19
+## - Species:Sepal.Length  2   1.69237 10.6894 -386.21
+## - Petal.Width           1   1.68292 10.6800 -384.34</code></pre>
+<pre class="r"><code>summary(step_1)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Sepal.Width ~ Species + Sepal.Length + Petal.Width + 
+##     I(Sepal.Length^2), data = data)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -0.85363 -0.13206  0.00619  0.17297  0.78127 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)       -2.60830    1.14098  -2.286   0.0237 *  
+## Speciesversicolor -1.59481    0.12661 -12.596  &lt; 2e-16 ***
+## Speciesvirginica  -1.88631    0.19275  -9.786  &lt; 2e-16 ***
+## Sepal.Length       1.80619    0.38096   4.741 5.05e-06 ***
+## Petal.Width        0.49857    0.11200   4.451 1.70e-05 ***
+## I(Sepal.Length^2) -0.12422    0.03065  -4.052 8.26e-05 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.2581 on 144 degrees of freedom
+## Multiple R-squared:  0.661,  Adjusted R-squared:  0.6493 
+## F-statistic: 56.16 on 5 and 144 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>summary(step_2)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Sepal.Width ~ Species + Sepal.Length + Petal.Width + 
+##     Species:Sepal.Length, data = data)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -0.77834 -0.14765  0.02457  0.16428  0.62667 
+## 
+## Coefficients:
+##                                Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                     -0.4731     0.5105  -0.927   0.3556    
+## Speciesversicolor                1.2981     0.6573   1.975   0.0502 .  
+## Speciesvirginica                 1.2252     0.6501   1.884   0.0615 .  
+## Sepal.Length                     0.7515     0.1021   7.363 1.31e-11 ***
+## Petal.Width                      0.5662     0.1095   5.172 7.68e-07 ***
+## Speciesversicolor:Sepal.Length  -0.5503     0.1239  -4.442 1.77e-05 ***
+## Speciesvirginica:Sepal.Length   -0.5883     0.1163  -5.058 1.28e-06 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.2508 on 143 degrees of freedom
+## Multiple R-squared:  0.6822, Adjusted R-squared:  0.6688 
+## F-statistic: 51.15 on 6 and 143 DF,  p-value: &lt; 2.2e-16</code></pre>
 </div>
 </div>
 

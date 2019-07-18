@@ -132,7 +132,7 @@ cor(data[,c(1:4)])
 
 Given a response variable, $y$, explanatory variables, $X_i$, and assuming that
 
-$$ y = \beta_0 +\beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_n X_n +\varepsilon,$$
+$$ y_i = \beta_0 +\beta_1 X_{1i} + \beta_2 X_{2i} + \cdots + \beta_n X_{ni} +\varepsilon$$
 
 where $\varepsilon$ is a noise term, linear regression attempts the find the coefficients $\beta_i$ that makes $\varepsilon$ as small as possible.
 
@@ -141,7 +141,7 @@ The formula above assumes that response variable is a linear function explanator
 Linear regression also assumes that the noise is normally distributed with zero mean. 
 
 If these two assumptions are voilated then 
-  $$r = y - \beta_0 +\beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_n X_n$$
+  $$r_i = y_i - \beta_0 +\beta_1 X_{1i} + \beta_2 X_{2i} + \cdots + \beta_n X_{ni}$$
   
   and $\sum_{i=1}^m r_i^2$ is generally a large number. $\sum_{i=1}^m r_i^2$ is called the residual standard error.
   
@@ -236,12 +236,26 @@ abline(coefs[4] +coefs[1],coefs[2],col='blue')
 
 ### Advanced Syntax: Nonlinear Regression
 
+The `lm` function can be extended to nonlinear functions. For example, it possible include a quadratic term in our model.
+
+$$\text{Sepal.Width} = \beta_1\text{Sepal.Length} + \beta_2\text{Sepal.Length}^2  + \varepsilon$$
+
+To add a quadratic term to the model, add `I(Sepal.Length^2)` to the left side of the tilde, `~`.
+
+
 ```{r}
 ols_quadratic <- lm(Sepal.Width ~ Sepal.Length + I(Sepal.Length^2), data = data)
 summary(ols_quadratic)
 ```
 
+It is also possible to include higher order nonlinear terms, such as cubic, quintic, etc.
+
 ### Advanced Syntax: Interaction term
+
+It is also possible to include model interaction between explanatory variables. 
+
+$$\text{Sepal.Width} = \beta_1\text{Sepal.Length} + \beta_2\text{Petal.Length} + \beta_3 \text{Sepal.Length}\times\text{Petal.Length} + \varepsilon$$
+$\text{Sepal.Length}\times\text{Petal.Length}$ models simple interaction between Sepal.Length and Petal.Length.
 
 ```{r}
 ols_interaction <- lm(Sepal.Width ~ Sepal.Length + Petal.Length + Sepal.Length*Petal.Length, data = data)
@@ -263,12 +277,121 @@ summary(ols_q_i)
 ```
 
 ## Obtaining the residuals
+
+Recall it is possible the measure the error between the model and response variables. Given least squares fit, 
+
+$$r_i = y_i - \beta_0 +\beta_1 X_{1i} + \beta_2 X_{2i} + \cdots + \beta_n X_{ni}$$
+r is the residual vector and $\sum_{i=1}^m r_i^2$ is the residual standard error. 
+
+It is possible to obtain residuals from the output of `lm`
 ```{r}
 res <- ols$residuals
 head(res)
 ```
+
 ## Obtaining the fitted values
+
+It is also possible to get predicted model values from the output of `lm`.
+
 ```{r}
 pred <- ols$fitted.values
 head(data.frame(pred=pred,orig=data$Sepal.Width ))
+```
+
+## Obtaining the ANOVA table
+
+
+```{r}
+anova(ols)
+```
+
+## Obtaining the variance-covariance matrix
+
+
+```{r}
+vcov(ols)
+```
+
+## Obtaining confidence intervals for the coefficients
+
+
+```{r}
+confint(ols, level = 0.95)
+```
+
+## Obtaining confidence interval of the mean response
+
+```{r}
+predict(ols, data.frame(Sepal.Length=4.0, Species="setosa"), interval="confidence", level = 0.95, se.fit=TRUE)
+```
+
+## Obtaining prediction limits for new observation
+
+```{r}
+predict(ols, data.frame(Sepal.Length=4.0, Species="setosa"),  interval="prediction", level = 0.95, se.fit=TRUE)
+```
+
+## Obtaining confidence band for the entire regression line
+
+```{r}
+alpha = 0.05
+n = dim(iris)[1]
+ci <- predict(ols, data.frame(Sepal.Length=4.0, Species="setosa"), interval="confidence", level= 1-alpha, se.fit=TRUE)
+yh.hat <- ci$fit[1]
+se.yh.hat <- ci$se.fit
+w <- sqrt(2*qf(1-alpha, 2, n-2))
+lower_bound <- yh.hat - w*se.yh.hat
+upper_bound <- yh.hat + w*se.yh.hat
+band <- c(lower_bound, upper_bound)
+band
+```
+
+## Standardized regression
+
+```{r}
+lm.beta(ols)
+```
+
+# Model selection
+
+## General linear test approach
+
+```{r}
+anova(ols_q_i, ols_interaction)
+```
+
+```{r}
+anova(ols_q_i, ols_quadratic)
+```
+
+```{r}
+anova(ols_quadratic, ols)
+```
+
+```{r}
+anova(ols_interaction, ols)
+```
+
+## AIC, BIC, and Adjusted R2
+
+```{r}
+aic <- c(AIC(ols_quadratic), AIC(ols_interaction))
+bic <- c(BIC(ols_quadratic), BIC(ols_interaction))
+ar2 <- c(summary(ols_quadratic)$adj.r.squared, summary(ols_interaction)$adj.r.squared)
+cbind(aic, bic, ar2)
+```
+
+## Step wise selection
+
+```{r}
+base <- lm(Sepal.Width ~ 1, data=data)
+retailer_quadratic <- lm(Sepal.Width ~ . + I(Sepal.Length^2), data=data)
+retailer_interaction <- lm(Sepal.Width ~ . + Sepal.Length*Species, data=data)
+step_1 <- step(base, scope = list(upper=retailer_quadratic, lower= ~1), direction = "both", trace=TRUE)
+step_2 <- step(base, scope = list(upper=retailer_interaction, lower= ~1), direction = "both", trace=TRUE)
+```
+
+```{r}
+summary(step_1)
+summary(step_2)
 ```
