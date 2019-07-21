@@ -34,7 +34,7 @@ In this section, we will be using the iris data set. This data set contains meas
 
 - *Sepal.Length* - measurements of Sepal length
 - *Sepal.Width* - measurements of Sepal width
-- *Petal.Lidth* - measurements of Petal length
+- *Petal.Length* - measurements of Petal length
 - *Petal.Width* - measurements of Petal width
 - *Species* - species of the plant
 
@@ -95,7 +95,7 @@ We also differentiate the scatter plot above by species. We plot each species se
 ```{r}
 plot(data[data$Species == "setosa", ]$Sepal.Length, 
      data[data$Species == "setosa", ]$Sepal.Width, 
-     xlab = 'Sepal Width',  ylab= 'Sepal Length',
+     xlab = 'Sepal Length',  ylab= 'Sepal Width',
      xlim = range(as.matrix(data$Sepal.Length)), 
      ylim = range(as.matrix(data$Sepal.Width)),
      main= 'Scatter plot of sepal length vs sepal width')
