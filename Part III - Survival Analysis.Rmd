@@ -1,8 +1,8 @@
 ---
-title: "Part II: Generalized Linear Models"
+title: "Part III: Survival Models"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 # Load Packages 
@@ -26,85 +26,298 @@ library(rms,  quietly = TRUE)
 library(MASS, quietly = TRUE)
 ```
 
+# Survival Models
+
+## Introduction 
+
+Survival models concerns the analysis of the time for an event to occur. The response variable is the time for the event to occur. The event is generally called "death."
+
+### Definitions
+
+Survival models involve two functions:
+
+- $S(t)$: the survival function. 
+$S(t)$ is probability that death has not occurred until after time, $t$.
+
+- $\lambda(t)$: the hazard function. 
+$$\lambda(t) = \frac{\text{probability of dying in at time, } t}{\text{probability of survival until time, } t} \approx \frac{\text{number of people who died at time, } t}{\text{number of people who lived until time, } t}$$ 
+$\lambda(t)$ measures the likelihood of death in a very small time interval, $t$ and $t+dt$. It is a measure of *risk*.
+
+- $\Lambda(t)$: the cumulative hazard. It is total hazard from $0$ to time, $t$.
+
+
+**Note that these two functions are related:** 
+
+- $\lambda(t) \leftrightarrow S(t)$ 
+$$ \lambda(t) = -\frac{d}{dt} \log S(t)$$
+- $\lambda(t) \leftrightarrow \Lambda(t)$
+$$\Lambda(t)=\int_0^t \lambda(t) \, dt $$
+- $S(t) \leftrightarrow \Lambda(t)$ and $S(t) \leftrightarrow \lambda(t)$
+
+$$ S(t) =\exp\left(-\Lambda(t)\right) = \exp\left(-\int_0^t \lambda(t)\, dt\right).$$
+
+### Censoring
+
+Like most models, survival models suceptible to imperfect data. Let's say a subject is recorded for a study up until a time, $t^{\ast}$. After time $t^{\ast}$, the subject may decide not to continue with study or it is not possible to locate the subject. Many things could have caused a lack of follow up. This subject is called *censored*. While it maybe reasonable to discard this data point, the censored data actually contains information that we know the event has not occurred prior to $t^{\ast}.$ This gives more information to our model about  time prior to $t^{\ast}$ than if we were to discard the censored data.
+
+## Data
+
+### Description 
+
+We will be working the `colon` data set. This data comes from one of the first successful trials of a drug for colon cancer. The recurrence and death times are recorded for all patients in the study. 
+
+The `colon` dataset has the following columns:
+
+- `id`:	id
+- `study`:	1 for all patients
+- `rx`:	Treatment - Obs(ervation), Lev(amisole), Lev(amisole)+5-FU.  Levamisole is a low-toxicity compound previously used to treat worm infestations in animals; 5-FU is a moderately toxic (as these things go) chemotherapy agent. 
+- `sex`:	0 = female, 1 = male
+- `age`:	age of the patient
+- `obstruct`:	0 = if tumour did not obstructed colon, 1 = if tumour obstructed colon
+- `perfor`:	perforation of colon
+- `adhere`:	adherence to nearby organs
+- `nodes`:	number of lymph nodes with detectable cancer
+- `time`:	days until event or censoring
+- `status`:	censoring status
+- `differ`:	differentiation of tumour (1=well, 2=moderate, 3=poor)
+- `extent`:	Extent of local spread (1=submucosa, 2=muscle, 3=serosa, 4=contiguous structures)
+- `surg`:	time from surgery to registration (0=short, 1=long)
+- `node4`:	more than 4 positive lymph nodes
+- `etype`:	event type: 1=recurrence,2=death
+
 ```{r}
 attach(colon)
 head(colon)
-
-sapply(colon,class)
 ```
 
-###Dichotomize age and nodes. Change data labels to factors
+
+### Subsetting data and converting data
+
+We will be studying the recurrence event of colon cancer.
 
 ```{r}
 colon_subset_recurrence = colon[colon$etype==1,]
-colon_subset_recurrence$age.ds = sapply(colon_subset_recurrence$age, function(x) ifelse(x > 60, 1, 0))
-colon_subset_recurrence$age.ds <- factor(colon_subset_recurrence$age.ds, levels= c("0","1"), labels=c("<60",">60"))
-colon_subset_recurrence$nodes.ds = sapply(colon_subset_recurrence$nodes, function(x) ifelse(x > 3, 1, 0))
-colon_subset_recurrence$nodes.ds <- factor(colon_subset_recurrence$nodes.ds, levels= c("0","1"), labels=c("<3",">3"))
-
-colon_subset_recurrence$sex <- factor(colon_subset_recurrence$sex, levels= c("0","1"), labels=c("F","M"))
-colon_subset_recurrence$obstruct <- factor(colon_subset_recurrence$obstruct,levels= c("0","1"), labels=c("no obstruct","obstruct"))
-colon_subset_recurrence$adhere <- factor(colon_subset_recurrence$adhere,levels= c("0","1"), labels=c("no adhere","adhere"))
-
-colon_subset_recurrence$perfor <- factor(colon_subset_recurrence$perfor, levels= c("0","1"), labels=c("no perfor","perfor"))
-colon_subset_recurrence$differ <- factor(colon_subset_recurrence$differ, levels= c("1","2","3"), labels=c("well","mod","poor"))
-colon_subset_recurrence$extent <- factor(colon_subset_recurrence$extent,  levels= c("1","2","3","4"),
-                                         labels=c("submucosa", "muscle", "serosa", "contiguous"))
-colon_subset_recurrence$surg <- factor(colon_subset_recurrence$surg,levels= c("0","1"), 
-                                       labels=c("short","long"))
-head(colon_subset_recurrence)
-
-surv <-with(colon_subset_recurrence, Surv(time,status))
 ```
 
-# Kalpan-Meier
+Some survival models can only handle variables encoded in 0 and 1. We need to convert continuous variables, such as age and nodes, to 0 and 1. 
+
+```{r}
+colon_subset_recurrence$age.ds = sapply(colon_subset_recurrence$age,
+                                        function(x) ifelse(x > 60, 1, 0))
+```
+
+If the binary variables are stored as `numeric` variables, the survival models will treat the explanatory variables as continuous variables rather than as discrete variables.
+
+```{r}
+sapply(colon,class)
+```
+
+Many discrete variables are stored as `numeric` variables. We have to convert these columns to `factor`. 
+
+The `factor` takes as arguments:
+
+- the dicrete data in the first argument
+- `level` is current coding the discrete data. This is an optional argument. 
+- `label` is the encoding that you would like to change to discrete data. This is an optional argument. Use this argument if you would to change the labeling of the discrete data. 
+
+```{r}
+colon_subset_recurrence$age.ds <- factor(colon_subset_recurrence$age.ds, 
+                                         levels= c("0","1"),
+                                         labels=c("<60",">60"))
+```
+
+```{r}
+colon_subset_recurrence$nodes.ds = sapply(colon_subset_recurrence$nodes,
+                                          function(x) ifelse(x > 3, 1, 0))
+colon_subset_recurrence$nodes.ds <- factor(colon_subset_recurrence$nodes.ds, 
+                                           levels= c("0","1"), 
+                                           labels=c("<3",">3"))
+```
+
+```{r}
+colon_subset_recurrence$sex <- factor(colon_subset_recurrence$sex,
+                                      levels= c("0","1"), labels=c("F","M"))
+```
+
+```{r}
+colon_subset_recurrence$obstruct <- factor(colon_subset_recurrence$obstruct,
+                                           levels= c("0","1"),
+                                           labels=c("no obstruct","obstruct"))
+colon_subset_recurrence$adhere <- factor(colon_subset_recurrence$adhere,
+                                         levels= c("0","1"),
+                                         labels=c("no adhere","adhere"))
+colon_subset_recurrence$perfor <- factor(colon_subset_recurrence$perfor, 
+                                         levels= c("0","1"), 
+                                         labels=c("no perfor","perfor"))
+```
+
+```{r}
+colon_subset_recurrence$differ <- factor(colon_subset_recurrence$differ,
+                                         levels= c("1","2","3"),
+                                         labels=c("well","mod","poor"))
+colon_subset_recurrence$extent <- factor(colon_subset_recurrence$extent, 
+                                         levels= c("1","2","3","4"),
+                                         labels=c("submucosa", "muscle", "serosa", "contiguous"))
+colon_subset_recurrence$surg <- factor(colon_subset_recurrence$surg,
+                                       levels= c("0","1"), 
+                                       labels=c("short","long"))
+```
+
+
+Now, let's take a look at the data.
+```{r}
+head(colon_subset_recurrence)
+```
+
+## Surv Object
+
+The `Surv` function takes as input the time and censoring status (0 or 1) of a data point. It returns a object that packages together time and censoring status.
+
+```{r}
+surv <-with(colon_subset_recurrence, Surv(time,status))
+head(surv)
+```
+
+The `+` at the end of the time indicates that the data point was censored.
+
+## Kalpan-Meier Estimator
+
+First, let $t_i$ be the $i$th recorded time in the data. That is, $t_1$ is the $1$st recorded time, $t_2$ is the $2$nd recorded time, ..., $t_{20}$ is the $20$th recorded, etc.
+
+ Kalpan-Meier assumes that the survival function can be estimated as 
+ 
+ $$ \hat{S}(t) = \prod_{\text{for }i:\, t_i \leq t}\left(1-\frac{d_i}{n_i}\right) $$
+ where $d_i$ is the number of persons that "died" after time $t_i$ and $n_i$ is the number of uncensored persons that have lived up to $t_i$.
+ 
+
+###  Kalpan-Meier Estimator for the entire data
+
+To fit $\hat{S}(t) = \prod_{\text{for }i:\, t_i \leq t} 1-\frac{d_i}{n_i}$ to the entire data, we use the command below.
 
 ```{r}
 km_fit <- survfit(surv~1, data=colon_subset_recurrence)
-summary(km_fit)
-autoplot(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE)
+```
+
+We can return a summary of the  $\hat{S}(t)$ at certain time points. `summary(km_fit)` will return a summary `km_fit` for all time points in the data. Since the data set is large, I do not run the command, `summary(km_fit)`. However, you are free to do this on your own.
+
+```{r}
+summary(km_fit,times=c(1,10,20,30,40,50))
+```
+
+There is a convience function `ggsurvplot` that generates a plot for a `survfit` object. `conf.int = TRUE` shows the confidence interval around the estimate. `risk.table = TRUE` shows a tabulation of risk below $\hat{S}(t)$.
+
+```{r}
+ggsurvplot(km_fit, data = colon_subset_recurrence,
+           conf.int = TRUE,risk.table = TRUE,
+           ggtheme = theme_bw(),
+           risk.table.col = "strata")
+```
+
+###  Kalpan-Meier Estimator for the data divided into obstruct and no obstruct
+
+`colon_subset_recurrence` can be divided two data sets by the `obstruct` column. Those patients whose colons are obstructed by the tumour and those whose colons aren't. We can fit to each data partition to a Kalpan-Meier Estimator
+$$\hat{S}_{\text{obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{obstruct}_i = \text{obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
+$$\hat{S}_{\text{no obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{obstruct}_i = \text{no obstruct}}} \left(1-\frac{d_i}{n_i}\right) $$
+to the entire data. To do this, we use the command below.
+
+```{r}
+km_fit <- survfit(surv~obstruct, data=colon_subset_recurrence)
 ```
 
 ```{r}
-km_fit <- survfit(surv~1 + obstruct, data=colon_subset_recurrence)
-summary(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,conf.int = TRUE,
-           risk.table = TRUE, ggtheme = theme_bw(),risk.table.col = "strata")
+summary(km_fit,times=c(1,10,20,30,40,50))
 ```
 
 ```{r}
-km_fit <- survfit(surv~1 + adhere, data=colon_subset_recurrence)
-summary(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,conf.int = TRUE)
+ggsurvplot(km_fit, data = colon_subset_recurrence, 
+           pval = TRUE,conf.int = TRUE,
+           risk.table = TRUE, ggtheme = theme_bw(),
+           risk.table.col = "strata")
+```
+
+###  Kalpan-Meier Estimator for the data divided into adhere and no adhere
+
+`colon_subset_recurrence` can be divided two data sets by the `adhere` column. Those patients whose colons are obstructed by the tumour and those whose colons aren't. We can fit to each data partition to a Kalpan-Meier Estimator
+$$\hat{S}_{\text{adhere}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{adhere}}} \left (1-\frac{d_i}{n_i}\right)$$
+$$\hat{S}_{\text{no adhere}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{no adhere}}} \left(1-\frac{d_i}{n_i}\right) $$
+to the entire data. To do this, we use the command below.
+
+```{r}
+km_fit <- survfit(surv~adhere, data=colon_subset_recurrence)
 ```
 
 ```{r}
-km_fit <- survfit(surv~1 + adhere + obstruct, data=colon_subset_recurrence)
-summary(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,
-           conf.int = TRUE)
+summary(km_fit,times=c(1,10,20,30,40,50))
 ```
 
 ```{r}
-km_fit <- survfit(surv~1 + nodes.ds + obstruct, data=colon_subset_recurrence)
-summary(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,
-           conf.int = TRUE)
+ggsurvplot(km_fit, data = colon_subset_recurrence, 
+           pval = TRUE,conf.int = TRUE,
+           risk.table = TRUE, ggtheme = theme_bw(),
+           risk.table.col = "strata")
+```
+
+###  Kalpan-Meier Estimator for the data divided into (adhere, obstruct), (adhere, no obstruct), (no adhere, obstruct) and (no adhere, no obstruct) 
+
+`colon_subset_recurrence` can be divided in any amount by the explanatory variables Let's consider breaking up the data based on a patient's obstruction and adherence status. We can fit to each data partition to a Kalpan-Meier Estimator
+$$\hat{S}_{\text{adhere}, \text{obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{adhere}\\ \text{obstruct}_i = \text{ obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
+$$\hat{S}_{\text{no adhere}, \text{obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{no adhere}\\ \text{obstruct}_i = \text{ obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
+
+$$\hat{S}_{\text{adhere}, \text{no obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{adhere}\\ \text{obstruct}_i = \text{no obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
+$$\hat{S}_{\text{no adhere}, \text{no obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t \\ \text{adher}_i = \text{no adhere}\\ \text{obstruct}_i = \text{no obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
+
+to the entire data. To do this, we use the command below.
+
+```{r}
+km_fit <- survfit(surv~adhere + obstruct, data=colon_subset_recurrence)
 ```
 
 ```{r}
-km_fit <- survfit(surv~1 + nodes.ds + obstruct + adhere, data=colon_subset_recurrence)
-summary(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,
-           conf.int = TRUE)
+summary(km_fit,times=c(1,10,20,30,40,50))
 ```
 
 
-#Cox Proportional Hazard
 ```{r}
-cox <- coxph(Surv(time,status) ~ 1 + obstruct, data=colon_subset_recurrence)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable="obstruct",conf.int = TRUE)
+ggsurvplot(km_fit, data = colon_subset_recurrence, 
+           pval = TRUE,conf.int = TRUE,
+           risk.table = TRUE, ggtheme = theme_bw(),
+           risk.table.col = "strata")
+```
+
+
+\newpage
+
+## Cox Proportional Hazard
+
+In the limit of large data, the Kaplan-Meier estimator converges to true survival function. However, the Kaplan-Meier has two disadvantages:
+
+- it cannot effectively accomodate continuous data
+- it is non-parameteric -- this means that given a data point, we cannot predict their life trajectory from data. This will be seen more clearly later in this section.
+
+Rather than estimating survival function at each time interval,  the *Cox Proportional Hazard* assumes that hazard function is an exponentiated linear function of explanatory variables. That is,
+
+$$\lambda(t) = \lambda_0(t)\exp\left(\beta_1 X_{1} + \cdots + \beta_n X_{n}\right).$$
+$\lambda_0(t)$ is called the baseline function. $\lambda(t) = \lambda_0(t)$ when $X_{1} = X_{2} = \cdots = X_{n} = 0$.
+
+
+The Cox Proportional Hazard models the effects of the covariates on the baseline function. The baseline function is generally unknown. However, the effects of the covariates can still be determined regardless of the baseline function. The $\beta_i$'s is calculated using *partial maximum likelihood.* Avoiding the estimation of $\lambda_0(t)$ prevents accumulation of errors in a unknown function. 
+
+Note that the Cox Proportional Hazard does not solve all the problems of the Kaplan-Meier estimator.  Cox Proportional Hazard has one (or 1/2) disadvantage:
+
+- it is semi-parametric. Given a data point, we can estimate the effect of a covariate on the baseline function. However, we cannot predict the life trajectory of data point unless we know $\lambda_0(t)$.
+
+### Cox Proportional Hazard for $X_1 = \text{obstruct}$
+
+Given only one covariate $X_1 = \text{obstruct}$, our Cox Proportional Hazard function takes the form
+
+$$\lambda(t) = \lambda_0(t)\exp\left(\beta_1 X_{1}\right).$$
+where 
+$$X_1 = \begin{cases} 0 & \text{if }X_1 = \text{no obstruct}\\ 1 & \text{if }X_1= \text{obstruct}\end{cases}.$$
+
+We fit the Cox Proportional Hazard model accordingly.
+```{r}
+cox <- coxph(surv ~  obstruct,
+             data=colon_subset_recurrence)
 ```
 
 ```{r}
@@ -124,8 +337,18 @@ test.ph
 ggforest(cox, data = colon_subset_recurrence)
 ```
 
+### Cox Proportional Hazard for $X_1 = \text{obstruct}$, $X_2 = \text{adher}$
+
+Given only two covariate $X_1 = \text{obstruct}$, our Cox Proportional Hazard function takes the form
+
+$$\lambda(t) = \lambda_0(t)\exp\left(\beta_1 X_1 + \beta_2 X_2\right).$$
+where 
+$$X_1 = \begin{cases} 0 & \text{if }X_1 = \text{no obstruct}\\ 1 & \text{if }X_1= \text{obstruct}\end{cases}, \, X_2 = \begin{cases} 0 & \text{if }X_2 = \text{no adhere}\\ 1 & \text{if }X_2= \text{adhere}\end{cases}.$$
+
+We fit the Cox Proportional Hazard model accordingly.
 ```{r}
-cox <- coxph(Surv(time,status) ~ 1 + obstruct + adhere, data=colon_subset_recurrence)
+cox <- coxph(surv ~  obstruct + adhere, 
+             data=colon_subset_recurrence)
 ```
 
 ```{r}
@@ -137,14 +360,6 @@ coef(cox)
 ```
 
 ```{r}
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "obstruct",conf.int = TRUE)
-```
-
-```{r}
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "adhere",conf.int = TRUE)
-```
-
-```{r}
 ggforest(cox, data = colon_subset_recurrence)
 ```
 
@@ -153,8 +368,18 @@ test.ph <- cox.zph(cox)
 test.ph
 ```
 
+### Cox Proportional Hazard for $X_1 = \text{obstruct}$, $X_2 = \text{adher}$, $X_3 = \text{nodes}$
+
+Given only three covariate $X_1 = \text{obstruct}$, our Cox Proportional Hazard function takes the form
+
+$$\lambda(t) = \lambda_0(t)\exp\left(\beta_1 X_1 + \beta_2 X_2 + \beta_3 X_3\right).$$
+where 
+$$X_1 = \begin{cases} 0 & \text{if }X_1 = \text{no obstruct}\\ 1 & \text{if }X_1= \text{obstruct}\end{cases}, \, X_2 = \begin{cases} 0 & \text{if }X_2 = \text{no adhere}\\ 1 & \text{if }X_2= \text{adhere}\end{cases}$$ and $X_3$ is any positive integer.
+
+We fit the Cox Proportional Hazard model accordingly.
 ```{r}
-cox <- coxph(Surv(time,status) ~ 1 + obstruct + adhere + nodes.ds, data=colon_subset_recurrence)
+cox <- coxph(surv ~ obstruct + adhere + nodes, 
+             data=colon_subset_recurrence)
 ```
 
 ```{r}
@@ -166,26 +391,26 @@ coef(cox)
 ```
 
 ```{r}
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "obstruct",conf.int = TRUE)
-```
-
-```{r}
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "adhere",conf.int = TRUE)
-```
-
-```{r}
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "nodes.ds",conf.int = TRUE)
-```
-
-
-```{r}
-ggforest(cox, data = colon_subset_recurrence)
 test.ph <- cox.zph(cox)
 test.ph
 ```
 
 ```{r}
-cox <- coxph(Surv(time,status) ~ 1 + obstruct + adhere + nodes.ds + extent, data=colon_subset_recurrence)
+ggforest(cox, data = colon_subset_recurrence)
+```
+
+### Cox Proportional Hazard for $X_1 = \text{obstruct}$, $X_2 = \text{adher}$, $X_3 = \text{nodes.ds}$
+
+Given only three covariate $X_1 = \text{obstruct}$, our Cox Proportional Hazard function takes the form
+
+$$\lambda(t) = \lambda_0(t)\exp\left(\beta_1 X_1 + \beta_2 X_2 + \beta_3 X_3\right).$$
+where 
+$$X_1 = \begin{cases} 0 & \text{if }X_1 = \text{no obstruct}\\ 1 & \text{if }X_1= \text{obstruct}\end{cases}, \, X_2 = \begin{cases} 0 & \text{if }X_2 = \text{no adhere}\\ 1 & \text{if }X_2= \text{adhere}\end{cases}, \, X_3 = \begin{cases} 0 & \text{if }X_3 = \text{>3}\\ 1 & \text{if }X_3= \text{<3}\end{cases}.$$
+
+We fit the Cox Proportional Hazard model accordingly.
+```{r}
+cox <- coxph(surv ~ obstruct + adhere + nodes.ds, 
+             data=colon_subset_recurrence)
 ```
 
 ```{r}
@@ -197,66 +422,67 @@ coef(cox)
 ```
 
 ```{r}
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "obstruct",conf.int = TRUE)
-```
-
-```{r}
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "adhere",conf.int = TRUE)
-```
-
-```{r}
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "nodes.ds",conf.int = TRUE)
-```
-
-```{r}
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "extent",conf.int = TRUE)
+test.ph <- cox.zph(cox)
+test.ph
 ```
 
 ```{r}
 ggforest(cox, data = colon_subset_recurrence)
 ```
 
-```{r}
-test.ph <- cox.zph(cox)
-test.ph
-```
+### Estimating Survival Curve
 
-### create a new subject and see their survival curve
+It is possible to estimate the survival curve for the Cox Proportional Model as long as we have some estimate for $\lambda_0(t)$. One way to estimate $\lambda_0(t)$ from data is to use formula:
 
-```{r}
-subject_one <- data.frame(obstruct = factor('no obstruct'), adhere = factor('adhere'), nodes.ds = factor('<3'), 
-                          extent=factor('serosa'))
-```
+$$\lambda_0(t_i) \approx \frac{d_i}{\sum_{s \in R_i} \exp\left(\beta_1 X_{1s} + \cdots + \beta_n X_{ns}\right)} $$
+where $d_i$ is the number of deaths in at time $t_i$, $R_i$ is set of persons alive after $t_i$ and $X_{ij}$ is the $i$th explanatory variable of the $j$th person.
+
+Now let's create some data point. This data point will have the `obstruct` set to `no obstruct`, `adhere` set to `no adhere`, `nodes.ds` set to `<3` and `extent` set to `serosa`.
 
 ```{r}
-prediction_one <- survfit(cox, subject_one, data = colon_subset_recurrence)
+subject_one <- data.frame(obstruct = factor('no obstruct'),
+                          adhere = factor('adhere'), nodes.ds = factor('<3'))
 ```
+
+Using the `survfit` function, we can generate an object which will be used for plotting.  `survfit` takes as argument:
+
+- first argment: cox proportional hazard model fit with `coxph`
+- second argment: the data point in question. It must have the same explanatory variables as the model in the first argument 
+- `data`: the data set used to fit the `coxph` object.
+
 
 ```{r}
-ggsurvplot(prediction_one, ylab = "No recurrence probability")
+prediction_one <- survfit(cox, subject_one, 
+                          data = colon_subset_recurrence)
 ```
+
+We then use the `ggsurvplot` function to plot the estimate of the survival curve from `survfit` fit object.
 
 ```{r}
-ggsurvplot(prediction_one, fun="cumhaz")
+ggsurvplot(prediction_one, ylab = "Probability of no recurrence ",
+           conf.int = TRUE,risk.table = TRUE,
+           ggtheme = theme_bw(),
+           risk.table.col = "strata")
 ```
 
-## Aalen's additive regression model
+We can also use the `ggsurvplot` function to plot the estimate of the cumulative hazard curve from `survfit` fit object
+
 ```{r}
-aa_fit <- aareg(surv ~1 + obstruct + adhere + nodes.ds + surg + rx + age, data = colon_subset_recurrence)
+ggsurvplot(prediction_one, fun="cumhaz",
+           conf.int = TRUE,risk.table = TRUE,
+           ggtheme = theme_bw(),
+           risk.table.col = "strata")
 ```
 
-```{r}
-autoplot(aa_fit)
-summary(aa_fit)
-```
+\newpage
 
-
-##Accelerated failure time models
+## Accelerated failure time models
 
 ```{r}
 sr_fit = survreg(surv ~ 1 + obstruct + adhere + nodes.ds, dist="weibull",data=colon_subset_recurrence)
 summary(sr_fit)
 ```
+
 ### create a new subject and see their survival curve
 
 need to fix
@@ -268,3 +494,17 @@ subject_two = list(obstruct = factor('no obstruct'), adhere = factor('adhere'), 
 #     col="red",type='l',xlab='time',ylab='Survival probability',main='Weibull')
 detach(colon)
 ```
+
+\newpage
+
+## Aalen's additive regression model
+
+```{r}
+aa_fit <- aareg(surv ~1 + obstruct + adhere + nodes.ds + surg + rx + age, data = colon_subset_recurrence)
+```
+
+```{r}
+autoplot(aa_fit)
+summary(aa_fit)
+```
+
