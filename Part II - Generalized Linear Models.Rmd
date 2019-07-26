@@ -527,3 +527,85 @@ summary(log_linear_model)
 ```{r}
 anova(log_linear_model,test='Chisq')
 ```
+
+# Hierarchical modeling
+```{r}
+student_data <- read.csv("data/hsb1.csv")
+school_data  <- read.csv("data/hsb2.csv")
+student_data$ses_grandmean <- student_data$ses - mean(student_data$ses) # Grand-mean centered student SES 
+school_data$sm_ses_grandmean <- school_data$meanses - mean(school_data$meanses) # Grand-mean centered school SES
+
+data <- merge(student_data, school_data, by = "id")
+
+ses_group_mean <- aggregate(data$ses, list(data$id), FUN = mean, data = data) # Group-mean centered student SES
+names(ses_group_mean)<- c('id','groupmeanSES')
+data <- merge(data, ses_group_mean, by = "id")
+
+groups <- unique(data$id)[sample(1:160,20)]
+subset <- data[data$id%in%groups, ]
+
+xyplot(mathach ~ ses | as.factor(id), subset,
+       col.line = 'black',
+       type = c("p", "r"),
+       main = 'Variability in Math Achievement ~ SES Relationship')
+
+xyplot(mathach ~ ses |as.factor(id), subset,
+                        col.line = 'black',
+                        type = c("p", "smooth"),
+                        main = 'Variability in Math Achievement ~ SES Relationship')
+
+xyplot(mathach ~ ses, subset,
+       type = c("p", "smooth"),
+       group = data$id,
+       main = 'Variability in Math Achievement ~ SES Relationship')
+
+unconditional <- lmer(mathach ~ 1 + (1|id), data = data)
+summary(unconditional) # on p-values in nlme: https://stat.ethz.ch/pipermail/r-help/2006-May/094765.html
+confint(unconditional) # you can also just calculate an approximate 95% confidence interval yourself: estimate +/- 2(SE) (in this case: 12.64 +/- 2(0.24))
+unconditional_2 <- lme(mathach ~ 1, random = ~ 1 | id, data = data)
+summary(unconditional_2)
+
+random_intercept_fixed_slope <- lmer(mathach ~ 1 + groupmeanSES + (1|id), data = data)
+summary(random_intercept_fixed_slope)
+confint(random_intercept_fixed_slope)
+random_intercept_fixed_slope_2 <- lme(mathach ~ 1 + groupmeanSES, random = ~ 1 | id, data = data)
+summary(random_intercept_fixed_slope_2)
+
+random_intercept_random_slope <- lmer(mathach ~ 1 + groupmeanSES + (1 + groupmeanSES|id), data = data)
+summary(random_intercept_random_slope)
+random_intercept_random_slope_2 <- lme(mathach ~ 1 + groupmeanSES, random = ~ 1 + groupmeanSES | id, data = data)
+summary(random_intercept_random_slope_2)
+
+fixed_intercept_random_slope <- lmer(mathach ~ 1 + groupmeanSES + (0 + groupmeanSES|id), data = data)
+summary(fixed_intercept_random_slope)
+fixed_intercept_random_slope_2 <- lme(mathach ~ 1 + groupmeanSES, random = ~ 0 + groupmeanSES | id, data = data)
+summary(fixed_intercept_random_slope_2)
+
+fixed_slope_level_two_variable <- lmer(mathach ~ 1 + groupmeanSES + sm_ses_grandmean + (1|id), data = data)
+summary(fixed_slope_level_two_variable)
+fixed_slope_level_two_variable_2 <- lme(mathach ~ 1 + groupmeanSES + sm_ses_grandmean, random = ~ 1 | id, data = data)
+summary(fixed_slope_level_two_variable_2)
+
+random_slope_level_two_variable <- lmer(mathach ~ 1 + groupmeanSES + sm_ses_grandmean + (1 + groupmeanSES|id), data = data)
+summary(random_slope_level_two_variable)
+random_slope_level_two_variable_2 <- lme(mathach ~ 1 + groupmeanSES + sm_ses_grandmean, random = ~ 1 + groupmeanSES | id, data = data)
+summary(random_slope_level_two_variable_2)  
+
+fixed_slope_cl_interaction <- lmer(mathach ~ 1 + groupmeanSES*sm_ses_grandmean + (1|id), data = data)
+summary(fixed_slope_cl_interaction)
+fixed_slope_cl_interaction_2 <- lme(mathach ~ 1 + groupmeanSES*sm_ses_grandmean, random = ~ 1 | id, data = data)
+summary(fixed_slope_cl_interaction_2)
+
+random_slope_cl_interaction <- lmer(mathach ~ 1 + groupmeanSES*sm_ses_grandmean + (1 + groupmeanSES|id), data = data)
+summary(random_slope_cl_interaction)
+random_slope_cl_interaction_2 <- lme(mathach ~ 1 + groupmeanSES*sm_ses_grandmean, random = ~ 1 + groupmeanSES | id, data = data)
+summary(random_slope_cl_interaction_2)
+
+logit_random_intercept_and_slope <- glmer(minority ~ groupmeanSES + (1 + groupmeanSES | id), data = data, 
+                                    family = binomial(link="logit"))
+summary(logit_random_intercept_and_slope)
+
+specified_variance_covariance_matrix_for_random_effects <- lme(mathach ~ 1 + groupmeanSES*sm_ses_grandmean, random = ~ 1 + groupmeanSES | id, 
+                                                               correlation = corAR1(), data = data) # just an example, not needed in this case (useful for growth curve models)!
+summary(specified_variance_covariance_matrix_for_random_effects)
+```

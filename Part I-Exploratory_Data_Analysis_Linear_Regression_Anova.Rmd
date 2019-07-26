@@ -1,8 +1,8 @@
 ---
 title: "Part I: Exploratory Data Analysis, Linear Regression, ANOVA"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ### Load Packages 
@@ -394,4 +394,95 @@ step_2 <- step(base, scope = list(upper=retailer_interaction, lower= ~1), direct
 ```{r}
 summary(step_1)
 summary(step_2)
+```
+
+# Diagnostics
+
+## Test for lack of fit 
+
+```{r}
+full <- lm(Sepal.Width ~ as.factor(Sepal.Length)*as.factor(I(Sepal.Length^2))*as.factor(Species), data=data)
+anova(ols_quadratic, full)
+```
+## Normal probability plot
+
+```{r}
+std_res <- rstandard(ols_quadratic)
+qqnorm(std_res, 
+     ylab="Standardized Residuals", 
+     xlab="Normal Scores") 
+qqline(std_res)
+```
+## Residual plots
+
+```{r}
+par(mfrow=c(2,2))
+plot(res ~ pred, xlab="Fitted", ylab="Residual", main="Residual plot against fitted values")
+abline(h=0)
+plot(res ~ data$Sepal.Length, xlab="X", ylab="Residual", main="Residual plot against X")
+abline(h=0)
+```
+## Test for multicollinearity
+
+ See also function vif() in package "car"
+```{r}
+VIF <- rep(0,2)
+VIF[1] <- 1/(1-summary(lm(Sepal.Width ~ Sepal.Length, data = data))$r.squared)
+VIF[2] <- 1/(1-summary(lm(Sepal.Width ~ as.factor(Species), data = data))$r.squared)
+VIF
+```
+## Test for heteroskedasticity
+
+
+```{r}
+bptest(ols_quadratic, studentize = FALSE)
+```
+## Test for outlying Y observations--studentized deleted residual
+
+```{r}
+p <- 5 # numer of parameters
+case <- c(1:n) # n defined above
+plot(case, rstudent(ols_quadratic), type="l", xlab="Case Numbers", 
+     ylab="Studentized Deleted Residuals", main="Test for Outlying Y Values")
+text(case, rstudent(ols_quadratic), case)
+alpha <- 0.05
+crit <- qt(1-alpha/2/n, n-p-1)
+which(abs(rstudent(ols_quadratic)) >=crit ) # Here there's no evidence of outlying Y observations
+```
+## Test for outlying X observations--hat matrix leverage values
+
+```{r}
+leverage <- hatvalues(ols_quadratic)
+plot(case, leverage, type="l", xlab="Case Numbers", 
+     ylab="Leverage", main="Test for Outlying X Values")
+text(case, leverage, case)
+abline(h=0.5, col=2)
+X_out <- which(leverage>0.5)
+leverage[X_out] # Here there's no outlying X observations
+```
+## Tests for influential observations
+### Cook's distance
+```{r}
+plot(case, cooks.distance(ols_quadratic), type="l", xlab="Case Numbers", 
+     ylab="Cook's Distance", main = "Test for Influential Values: Cook's Distance")
+text(case, cooks.distance(ols_quadratic))
+
+inf_obs <- which(cooks.distance(ols_quadratic)>0.5)
+inf_obs
+```
+### DFFITS
+
+```{r}
+plot(case, dffits(ols_quadratic), type="l", xlab="Case Numbers", 
+     ylab="DFFITS", main = "Test for Influential Values: DFFITS")
+text(case, dffits(ols_quadratic))
+
+inf_obs2 <- which(abs(dffits(ols_quadratic))>2/sqrt(p/n))
+inf_obs2
+```
+
+### DFBETAS
+```{r}
+inf_obs3 <- which(abs(dfbeta(ols_quadratic))>2/sqrt(n))
+inf_obs3
 ```
