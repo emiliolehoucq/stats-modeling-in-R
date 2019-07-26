@@ -1,8 +1,8 @@
 ---
 title: "Part II: Generalized Linear Models"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 # Load Packages 
@@ -185,7 +185,7 @@ points(data$Sepal.Length[data$Species == "virginica"],
 
 ## Deviance
 
- For general linear models, we use *deviance* to the "distance" between two models. Deviance is the difference in log likelihood of the models multipled by 2.
+ For general linear models, we use *deviance* to the compare to two different models. Deviance is the difference in log likelihood of the models multipled by 2.
  
 ### Saturated Model
  
@@ -201,7 +201,8 @@ $$H_{\alpha}:\text{the fitted model is not equivalent to the saturated model}$$
 `logit$deviance` is the deviance between saturated model and fitted model. `logit$df.residual` is equal to number of observations minus the number of coefficients in the fitted model. Using this, we can calculate the p value for the hypothesis test above.
 
 ```{r}
-p_value = 1 - pchisq(logit$deviance, logit$df.residual)
+p_value = pchisq(logit$deviance, 
+                 logit$df.residual, lower.tail = F)
 print(p_value)
 ```
 
@@ -226,8 +227,8 @@ Using this information, we can calculate the p value for the hypothesis test abo
 
 
 ```{r}
-p_value = 1 - pchisq(logit$null.deviance-logit$deviance,
-                     logit$df.null-logit$df.residual)
+p_value = pchisq(logit$null.deviance-logit$deviance,
+                 logit$df.null-logit$df.residual, lower.tail = F)
 print(p_value)
 ```
 
@@ -244,94 +245,285 @@ anova(logit,test="Chisq")
 
 \newpage
 
-# Poisson and Quasi-Poisson Regression
+# Poisson Regression
+
+
 
 ```{r}
-attach(grouseticks)
-summary(grouseticks)
+attach(colon)
+summary(colon)
 ```
 
 ```{r}
-sapply(grouseticks, class)
+colon_data <- na.omit(colon)
+sapply(colon_data, class)
+```
 
+```{r}
+colon_data$age.ds = sapply(colon_data$age,
+                          function(x) ifelse(x > median(age), 1, 0))
+colon_data$age.ds <- factor(colon_data$age.ds, 
+                            levels= c("0","1"),
+                            labels=c("<median",">median"))
+```
 
-ggplot(grouseticks,aes(x=grouseticks$TICKS))+ 
-  geom_histogram(binwidth = 1, center = 0.5) +
-  scale_x_continuous(breaks=seq(1,max(grouseticks$TICKS), by = 5))+
+```{r}
+colon_data$node4 <- factor(colon_data$node4, 
+                          levels= c("0","1"), 
+                          labels=c("<4",">4"))
+```
+
+```{r}
+colon_data$sex <- factor(colon_data$sex,
+                        levels= c("0","1"), labels=c("F","M"))
+```
+
+```{r}
+colon_data$obstruct <- factor(colon_data$obstruct,
+                             levels= c("0","1"),
+                            labels=c("no obstruct","obstruct"))
+colon_data$adhere <- factor(colon_data$adhere,
+                            levels= c("0","1"),
+                            labels=c("no adhere","adhere"))
+colon_data$perfor <- factor(colon_data$perfor, 
+                            levels= c("0","1"), 
+                            labels=c("no perfor","perfor"))
+```
+
+```{r}
+colon_data$differ <- factor(colon_data$differ,
+                            levels= c("1","2","3"),
+                            labels=c("well","mod","poor"))
+colon_data$extent <- factor(colon_data$extent, 
+                            levels= c("1","2","3","4"),
+                            labels=c("submucosa", "muscle", "serosa", "contiguous"))
+colon_data$surg <- factor(colon_data$surg,
+                          levels= c("0","1"), 
+                          labels=c("short","long"))
+```
+
+```{r}
+ggplot(colon_data,aes(x=colon_data$nodes))+ 
+  geom_histogram(binwidth = 1, center = 1) +
+  scale_x_continuous(breaks=seq(0,max(colon_data$nodes), by = 1))+
   ylab("Count")+ xlab("data")+
-  ggtitle("Histogram plot of the number of ticks on the heads of red grouse chicks")
+  ggtitle("Histogram plot of the number of epileptic seizures")
 ```
 
 ```{r}
-model = glm(TICKS~ 1, family=poisson(link=log),data=grouseticks)
-summary(model)
+poisson_model = glm(nodes ~ 1, family=poisson(link=log),data=colon_data)
+summary(poisson_model)
 ```
 
 
 ```{r}
-print(coef(model))
+print(coef(poisson_model))
 ```
 
 ```{r}
-head(data.frame(grouseticks$TICKS,model$fitted))
+head(data.frame(colon_data$nodes,poisson_model$fitted))
 ```
 
 ```{r}
-head(model$linear.predictors)
-head(exp(model$linear.predictors))
+head(poisson_model$linear.predictors)
+head(exp(poisson_model$linear.predictors))
 ```
+## Hypothesis test for goodness of fit
 
-### Hypothesis test for goodness of fit
 ```{r}
-print(1-pchisq(model$deviance,model$df.residual))
-```
-
-plot data comparison
-```{r}
-df_original = data.frame(data=grouseticks$TICKS)
-df_fitted = data.frame(data=model$fitted)
-plot(df_original$data,df_fitted$data,ylab='fit data',xlab='original data')
+p_value = pchisq(poisson_model$deviance,
+                 poisson_model$df.residual, lower.tail = F)
+print(p_value)
 ```
 
 
-add a Covariate to the fit -- treatment
 ```{r}
-model = glm(TICKS~ 1 +HEIGHT + LOCATION, family=poisson(link=log),grouseticks)
-summary(model)
-print(1-pchisq(model$deviance,model$df.residual))
+p_value = pchisq(poisson_model$null.deviance-logit$deviance,
+                poisson_model$df.null-logit$df.residual, lower.tail = F)
+print(p_value)
+```
+
+
+## add a Covariate to the fit -- treatment
+```{r}
+poisson_model = glm(nodes~ 1 + rx, family=poisson(link=log),data=colon_data)
+summary(poisson_model)
 ```
 
 ```{r}
-df_fitted = data.frame(data=model$fitted)
-df_fitted$name = "fitted"
-plot(df_original$data,df_fitted$data)
+plot(colon_data$nodes)
+points(poisson_model$fitted,col="red")
 ```
 
-### add a Covariate to the fit -- treatment, age
+## Hypothesis test for goodness of fit
 
 ```{r}
-#model = glm(y ~ 1 +trt*age, family=poisson(link=log),df)
-#summary(model)
+p_value = pchisq(poisson_model$deviance,
+                 poisson_model$df.residual, lower.tail = F)
+print(p_value)
+```
+
+
+```{r}
+p_value = pchisq(poisson_model$null.deviance-logit$deviance,
+                poisson_model$df.null-logit$df.residual, lower.tail = F)
+print(p_value)
 ```
 
 ```{r}
-print(1-pchisq(model$deviance,model$df.residual))
-df_fitted = data.frame(data=model$fitted)
-combined=rbind(df_original,df_fitted)
-plot(df_original$data,df_fitted$data)
+anova(poisson_model,test="Chisq")
 ```
 
-## Overdispersion might be present -- try Quasipossion  
+
+
+### add a Covariate to the fit -- treatment, time
+
 ```{r}
-#model = glm(y ~ 1 +trt*age, family=quasipoisson(link=log),df)
-#summary(model)
+poisson_model = glm(nodes ~ 1 + rx + time,
+                    family=poisson(link=log),data=colon_data)
+summary(poisson_model)
+```
 
-#print(1-pchisq(model$deviance,model$df.residual))
+## Hypothesis test for goodness of fit
 
-#df_fitted = data.frame(data=model$fitted)
+```{r}
+p_value = pchisq(poisson_model$deviance,
+                 poisson_model$df.residual, lower.tail = F)
+print(p_value)
+```
 
-#combined=rbind(df_original,df_fitted)
 
-#plot(df_original$data,df_fitted$data)
-#detach(epil)
+```{r}
+p_value = pchisq(poisson_model$null.deviance-logit$deviance,
+                poisson_model$df.null-logit$df.residual, lower.tail = F)
+print(p_value)
+```
+
+```{r}
+anova(poisson_model,test="Chisq")
+```
+
+### add a Covariate to the fit -- treatment, time interaction
+
+```{r}
+poisson_model = glm(nodes ~ 1 + rx*time,
+                    family=poisson(link=log),data=colon_data)
+summary(poisson_model)
+```
+
+```{r}
+p_value = pchisq(poisson_model$deviance,
+                 poisson_model$df.residual, lower.tail = F)
+print(p_value)
+```
+
+```{r}
+p_value = pchisq(poisson_model$null.deviance-logit$deviance,
+                poisson_model$df.null-logit$df.residual, lower.tail = F)
+print(p_value)
+```
+
+```{r}
+anova(poisson_model,test="Chisq")
+```
+
+\newpage
+
+# Log-Linear Regression
+
+Log-linear models allow us to model asscociation between between two or more variables in contingency table. In a log-linear model, there are no well defined explanatory/response variables. This is because we are focused more on the *interaction* between two variables.
+
+## Contingency Table
+
+Contingency table displays number of observations for a given combination of factors.
+
+This definition is best represented by an example. 
+
+```{r}
+epil$y_binary <- sapply(epil$y,function(x) ifelse(x > median(epil$y), 1, 0))
+```
+
+### One-Way Contingency Table
+```{r}
+table(y_relative_median=epil$y_binary)
+```
+
+## Two-Way Contingency Table
+```{r}
+table(y_relative_median=epil$y_binary,period=epil$period)
+```
+
+### Independent Model
+
+```{r}
+contigency_table = table(y_relative_median=epil$y_binary,period=epil$period)
+```
+
+Need to convert contigency table in a form that is acceptable to `glm`
+```{r}
+contigency_table.df = as.data.frame(contigency_table)
+```
+
+```{r}
+log_linear_model <- glm(Freq ~ y_relative_median + period, 
+            data = contigency_table.df, family = poisson)
+```
+
+```{r}
+summary(log_linear_model)
+```
+### Saturated Model
+
+```{r}
+log_linear_model <- glm(Freq ~ period*y_relative_median, 
+            data = contigency_table.df, family = poisson)
+```
+
+
+```{r}
+summary(log_linear_model)
+```
+```{r}
+anova(log_linear_model,test='Chisq')
+```
+
+## Three-Way Contingency Table
+```{r}
+table(y_relative_median=epil$y_binary,period=epil$period,trt=epil$trt)
+```
+
+### Independent Model
+```{r}
+contigency_table = table(y_relative_median=epil$y_binary,
+                         period=epil$period,trt=epil$trt)
+```
+
+Need to convert contigency table in a form that is acceptable to `glm`
+```{r}
+contigency_table.df = as.data.frame(contigency_table)
+```
+
+```{r}
+log_linear_model <- glm(Freq ~ y_relative_median + period + trt, 
+            data = contigency_table.df, family = poisson)
+```
+
+```{r}
+summary(log_linear_model)
+```
+
+### Saturated Model
+
+```{r}
+log_linear_model <- glm(Freq ~ period*y_relative_median*trt, 
+            data = contigency_table.df, family = poisson)
+```
+
+
+```{r}
+summary(log_linear_model)
+```
+
+```{r}
+anova(log_linear_model,test='Chisq')
 ```
