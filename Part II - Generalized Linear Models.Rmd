@@ -43,6 +43,7 @@ $$g(\mu) = \eta_i$$
 Logistic regression is a GLM used the model binary (0 or 1) data. The response variable must be binary and is assumed to follow a bernoulli distribution. 
 
 That said, logistic regression has the following properties:
+
 -  a response binary variable, $Y_i$, that follows a bernoulli distribution with mean $\pi_i$.
 - a systematic component, $\eta_i$, that relates the relates the explanatory variables,
 $$\eta_i = \sum_{j=1}^{n} \beta_j x_{ij}$$
@@ -108,15 +109,18 @@ coefficients<-unname(coef(logit))
 print(c(coefficients[1],coefficients[1]+coefficients[2],
         coefficients[1]+coefficients[3]))
 ```
+## Logistic Regression with continuous variable
 
-## Logistic Regression with Sepal.Length
+*add discussion here *
+
+
+## Logistic Regression with continuous variable, Sepal.Length
 
 Fitting the species term, the systematic component is
 
 $$\eta_i =  \beta_3 X_{1i}.$$
 
-where 
-$$  X_{1i} = \begin{cases} 1 & \text{if } i\text{th data point is versicolor}\\ 0 &  \text{otherwise}\end{cases}, \, X_{2i} = \begin{cases} 1 & \text{if } i \text{th data point is virginica}\\ 0 & \text{otherwise}\end{cases}$$ and $X_{3i} = \text{Sepal.Length of the }i\text{th  data point}.$
+where  $X_{1i} = \text{Sepal.Length of the }i\text{th  data point}.$
 
 ```{r}
 logit <- glm(Sepal.Width_binary ~ Sepal.Length, 
@@ -184,8 +188,9 @@ points(data$Sepal.Length[data$Species == "virginica"],
        col="blue")
 ```
 
+## Goodness of Fit
 
-## Deviance
+### Deviance
 
  For general linear models, we use *deviance* to the compare to two different models. Deviance is the difference in log likelihood of the models multipled by 2.
  
@@ -208,7 +213,7 @@ p_value = pchisq(logit$deviance,
 print(p_value)
 ```
 
-Since the p value is less than 0.05, we fail to reject the null hypothesis. (This is a good thing.)
+Since the p value is greater than 0.05, we fail to reject the null hypothesis. (This is a good thing.)
 
 ### Null Model
 
@@ -238,7 +243,8 @@ Since the p value is less than one, we reject our null hypothesis. (This is a go
 
 ### Anova 
 
-Sequencial comparison of model terms by deviance
+`anova` with argument `test="Chisq` allows us to compare change in deviance after sequencially adding terms our model.
+
 
 ```{r}
 anova(logit,test="Chisq")
@@ -260,7 +266,8 @@ A possion GLM is used to study *count* data (i.e. discrete numbers, $0,1,2,\cdot
 A possion GLM is most useful when studying data in which the mean and variable are approximately equal. If they are not not equal, the standard error of the model terms must adjusted to account for the assumption violation.
 
 Poisson Regression has the following properties:
--  a response binary variable, $Y_i$, that follows a Possion distribution with mean $\mu_i$
+
+-  response count variables, $Y_i$, that follows a Possion distribution with mean $\mu_i$
 - a systematic component, $\eta_i$, that relates the relates the explanatory variables,
 $\eta_i = \sum_{j=1}^{n} \beta_j x_{ij}$$
 - a link function, $log(\mu_i) = \sum_{j=1}^{n} \beta_j x_{ij}$
@@ -321,12 +328,16 @@ Although mean and variance are not equal, we will still fit it to Poisson distri
 
 ## Possion Regression with constant term
 
+To model only the constant term, I use the formula `art ~ 1`. This formula is equivalent to
+
+$$\log \mu_i  = \beta_0.$$
+
 ```{r}
 poisson_model = glm(art ~ 1, family=poisson(link=log),data=bioChemists)
 summary(poisson_model)
 ```
 
-The constant term is the mean number of counts.
+Note that the constant term is the log mean number of counts.
 
 ```{r}
 print(coef(poisson_model))
@@ -336,9 +347,10 @@ print(coef(poisson_model))
 print(log(mean(bioChemists$art)))
 ```
 
-### Hypothesis test for goodness of fit
+## Goodness of fit
 
-**TODO**should i reject the null in this case?
+### Saturated model
+We can again compare the current model to the saturated model (best possible fit).
 
 ```{r}
 p_value = pchisq(poisson_model$deviance,
@@ -346,28 +358,47 @@ p_value = pchisq(poisson_model$deviance,
 print(p_value)
 ```
 
+Since our p value is less than 0.05, we reject the null hypothesis. The models are not equivalent.
+ 
+### Null model
+
+We can also compare the current model to the null model (worst possible fit).
 
 ```{r}
-p_value = pchisq(poisson_model$null.deviance-logit$deviance,
-                poisson_model$df.null-logit$df.residual, lower.tail = F)
+p_value = pchisq(poisson_model$null.deviance-poisson_model$deviance,
+                poisson_model$df.null-poisson_model$df.residual, lower.tail = F)
 print(p_value)
 ```
+
+We fail to reject the null hypothesis. This makes sense since the models are literally the same thing.
 
 
 ## Possion Regression with martial status covariate
 
+To model the martial status covariate, I use the formula `art ~ 1+mar`. This formula is equivalent to
+
+$$\log \mu_i = \beta_0 + \beta_1 X_{1i} $$
+
+where $$X_{1i} = \begin{cases}1 & \text{if mar = Married } \\ 0 & \text{otherwise} \end{cases}.$$
+
 ```{r}
-poisson_model = glm(art~ 1 + mar , family=poisson(link=log),data=bioChemists)
+poisson_model = glm(art~1+mar , family=poisson(link=log),data=bioChemists)
 summary(poisson_model)
 ```
 
 ```{r}
-plot(bioChemists$art)
+plot(bioChemists$art,ylab='number of articles',xlab = 'Index')
 points(poisson_model$fitted[bioChemists$mar=='Single'],col="red")
 points(poisson_model$fitted[bioChemists$mar=='Married'],col="blue")
 ```
 
-### Hypothesis test for goodness of fit
+Graphically, we can see than that martial status is not good indicator of number articles published.
+
+##Goodness of fit
+
+### Saturated model
+
+We can again compare the current model to the saturated model (best possible fit).
 
 ```{r}
 p_value = pchisq(poisson_model$deviance,
@@ -375,12 +406,20 @@ p_value = pchisq(poisson_model$deviance,
 print(p_value)
 ```
 
+Since our p value is less than 0.05, we reject the null hypothesis. The models are not equivalent and our model is a bad fit.
+
+### Null model
+
+We can also compare the current model to the null model (worst possible fit).
 
 ```{r}
 p_value = pchisq(poisson_model$null.deviance-logit$deviance,
                 poisson_model$df.null-logit$df.residual, lower.tail = F)
 print(p_value)
 ```
+
+Since our p value is less than 0.05, we reject the null hypothesis. The models are not equivalent. Though our current model does not capture much deviance, the current model captures much more variance than the null model.
+
 
 ```{r}
 anova(poisson_model,test="Chisq")
@@ -390,15 +429,47 @@ anova(poisson_model,test="Chisq")
 
 ##  Possion Regression with martial status and children covariate
 
-*TODO* why are interaction factors NA
+To model the martial status and children as covariates, I use the formula `art ~ 1+mar + kid5`. This formula is equivalent to
 
+$$\log \mu_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{4i}$$
+
+where 
+$$X_{1i} = \begin{cases}1 & \text{if the ith data point is married} \\ 0 & \text{otherwise} \end{cases},$$
+$$ X_{2i} = \begin{cases}1 & \text{if the number of children of ith data point is  1 } \\ 0 & \text{otherwise} \end{cases},$$
+$$X_{3i} = \begin{cases}1 & \text{if the number of children of ith data point is 2 } \\ 0 & \text{otherwise} \end{cases}$$
+
+$$\text{and } X_{4i} = \begin{cases}1 & \text{if the number of children of ith data point is 3 } \\ 0 & \text{otherwise} \end{cases}.$$
 ```{r}
 poisson_model = glm(art ~ 1 + kid5 + mar,
                     family=poisson(link=log),data=bioChemists)
 summary(poisson_model)
 ```
+```{r}
+plot(bioChemists$art,ylab='number of articles',xlab = 'Index')
+single_bioChemists = bioChemists[bioChemists$mar=='Single',]
 
-### Hypothesis test for goodness of fit
+points(poisson_model$fitted[single_bioChemists$kid5== 0],col="blue",pch=1)
+points(poisson_model$fitted[single_bioChemists$kid5== 1],col="yellow",pch=1)
+points(poisson_model$fitted[single_bioChemists$kid5== 2],col="red",pch=1)
+points(poisson_model$fitted[single_bioChemists$kid5== 3],col="green",pch=1)
+
+```
+
+```{r}
+plot(bioChemists$art,ylab='number of articles',xlab = 'Index')
+mar_bioChemists = bioChemists[bioChemists$mar=='Married',]
+
+points(poisson_model$fitted[mar_bioChemists$kid5== 0],col="blue",pch=2)
+points(poisson_model$fitted[mar_bioChemists$kid5== 1],col="yellow",pch=2)
+points(poisson_model$fitted[mar_bioChemists$kid5== 2],col="red",pch=2)
+points(poisson_model$fitted[mar_bioChemists$kid5== 3],col="green",pch=2)
+```
+Graphically, we can see than that martial status and number of children is not good indicator of number articles published.
+
+## Goodness of Fit
+
+### Saturated model 
+We can again compare the current model to the saturated model (best possible fit).
 
 ```{r}
 p_value = pchisq(poisson_model$deviance,
@@ -406,28 +477,55 @@ p_value = pchisq(poisson_model$deviance,
 print(p_value)
 ```
 
+Since our p value is less than 0.05, we reject the null hypothesis. The models are not equivalent.
 
+### Null model
+
+We can also compare the current model to the null model (worst possible fit). 
 ```{r}
-p_value = pchisq(poisson_model$null.deviance-logit$deviance,
-                poisson_model$df.null-logit$df.residual, lower.tail = F)
+p_value = pchisq(poisson_model$null.deviance-poisson_model$deviance,
+                poisson_model$df.null-poisson_model$df.residual, lower.tail = F)
 print(p_value)
 ```
+
+### Anova
+
+We can also determine the model terms that cause a significance reduction in deviance.
 
 ```{r}
 anova(poisson_model,test="Chisq")
 ```
 
 
-##  Possion Regression with martial status, children and number of mentor articles
+##  Possion Regression with continuous variables, mentor articles and martial status
 
+To model the martial status and number of mentor articles as covariates, I use the formula `art ~ 1+mar + ment`. This formula is equivalent to
+
+$$\log \mu_i = \beta_0 + \beta_1 X_{1i} + X_{2i}$$
+
+where 
+$$X_{1i} = \begin{cases}1 & \text{if the i data point is Married } \\ 0 & \text{otherwise} \end{cases}$$ 
+and
+$X_{2i}$  is the number of publications of the $i$th data point's mentor.
 
 ```{r}
-poisson_model = glm(art ~ 1 + kid5 + mar + ment,
+poisson_model = glm(art ~ 1 + ment +mar,
                     family=poisson(link=log),data=bioChemists)
 summary(poisson_model)
 ```
 
-### Hypothesis test for goodness of fit
+```{r}
+plot(bioChemists$art,ylab='number of articles',xlab = 'Index')
+
+points(poisson_model$fitted,col="blue",pch=1)
+
+```
+Graphically, we can see than that martial status and number of children is not good indicator of number articles published.
+
+## Goodness of Fit
+
+### Saturated model 
+We can again compare the current model to the saturated model (best possible fit).
 
 ```{r}
 p_value = pchisq(poisson_model$deviance,
@@ -435,12 +533,21 @@ p_value = pchisq(poisson_model$deviance,
 print(p_value)
 ```
 
+Since our p value is less than 0.05, we reject the null hypothesis. The models are not equivalent.
+
+### Null model
+
+We can also compare the current model to the null model (worst possible fit). 
 
 ```{r}
-p_value = pchisq(poisson_model$null.deviance-logit$deviance,
-                poisson_model$df.null-logit$df.residual, lower.tail = F)
+p_value = pchisq(poisson_model$null.deviance-poisson_model$deviance,
+                poisson_model$df.null-poisson_model$df.residual, lower.tail = F)
 print(p_value)
 ```
+
+### Anova
+
+We can also determine the model terms that cause a significance reduction in deviance.
 
 ```{r}
 anova(poisson_model,test="Chisq")
@@ -460,104 +567,235 @@ Contingency table displays number of observations for a given combination of fac
 This definition is best represented by an example. 
 
 ```{r}
-bioChemists$art_binary <- sapply(bioChemists$art,function(x) ifelse(x > 2, 1, 0))
+bioChemists$art_binary <- sapply(bioChemists$art,function(x) ifelse(x > 1, 1, 0))
 bioChemists$ment_binary <- sapply(bioChemists$ment,function(x) ifelse(x > median(bioChemists$ment), 1, 0))
 
 ```
 
 ### One-Way Contingency Table
+
+A one-way contingency table shows the counts according to one covariate.
 ```{r}
 table(art_relative=bioChemists$art_binary)
 ```
 
-## Two-Way Contingency Table
+This one-way contigency table shows that:
+
+- there are 521 biochemists with 1 or less papers
+- there are 394 biochemists with greater than 1 papers.
+
+### Two-Way Contingency Table
+
+A two-way contingency table shows the counts according to two covariates.
+
 ```{r}
 table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary)
 ```
 
-### Independent Model
+This two-way contigency table shows that:
 
-```{r}
-contigency_table = table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary)
-```
+- there are 321 biochemists with 1 or less papers and with a mentor that produced less than or equal to 6 papers
+- there are 200 biochemists with 1 or less papers and with a mentor that produced more than 6 papers
+- there are 171 biochemists with more than 1 paper and with a mentor that produced less than or equal to 6 papers
+- there are 200 biochemists with more than 1 paper and with a mentor that produced more than 6 papers
 
-Need to convert contigency table in a form that is acceptable to `glm`
-```{r}
-contigency_table.df = as.data.frame(contigency_table)
-```
+### Three-Way Contingency Table
 
-```{r}
-log_linear_model <- glm(Freq ~ art_relative + ment, 
-            data = contigency_table.df, family = poisson)
-```
+A three-way contingency table shows the counts according to three covariates.
 
-```{r}
-summary(log_linear_model)
-```
-### Saturated Model
-
-```{r}
-log_linear_model <- glm(Freq ~ art_relative*ment, 
-            data = contigency_table.df, family = poisson)
-```
-
-
-```{r}
-summary(log_linear_model)
-```
-```{r}
-anova(log_linear_model,test='Chisq')
-```
-
-## Three-Way Contingency Table
 ```{r}
 table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary,
       kid5=bioChemists$kid5)
 ```
 
-### Independent Model
-```{r}
-contigency_table = table(art_relative=bioChemists$art_binary,
-                         ment=bioChemists$ment_binary,
-                         kid5=bioChemists$kid5)
-```
 
-Need to convert contigency table in a form that is acceptable to `glm`
+This two-way contigency table shows that:
+
+* With no children, 
+    * there are 208 biochemists with 1 or less papers and with a mentor that produced less than or equal to 6 papers
+    * there are 128 biochemists with 1 or less papers and with a mentor that produced more than 6 papers
+    * there are 116 biochemists with more than 1 paper and with a mentor that produced less than or equal to 6 papers
+    * there are 147 biochemists with more than 1 paper and with a mentor that produced more than 6 papers
+    
+* With 1 child, 
+    * there are 66 biochemists with 1 or less papers and with a mentor that produced less than or equal to 6 papers
+    * there are 46 biochemists with 1 or less papers and with a mentor that produced more than 6 papers
+    * there are 38 biochemists with more than 1 paper and with a mentor that produced less than or equal to 6 papers
+    * there are 45 biochemists with more than 1 paper and with a mentor that produced more than 6 papers
+    
+* With 2 children, 
+    * there are 39 biochemists with 1 or less papers and with a mentor that produced less than or equal to 6 papers
+    * there are 21 biochemists with 1 or less papers and with a mentor that produced more than 6 papers
+    * there are 16 biochemists with more than 1 paper and with a mentor that produced less than or equal to 6 papers
+    * there are 29 biochemists with more than 1 paper and with a mentor that produced more than 6 papers
+    
+* With 3 children, 
+    * there are 8 biochemists with 1 or less papers and with a mentor that produced less than or equal to 6 papers
+    * there are 5 biochemists with 1 or less papers and with a mentor that produced more than 6 papers
+    * there are 1 biochemists with more than 1 paper and with a mentor that produced less than or equal to 6 papers
+    * there are 2 biochemists with more than 1 paper and with a mentor that produced more than 6 papers
+
+
+## Log-linear regression
+For a two way contingency table, log-linear GLMs have the following properties:
+
+- count response variables, $Y_{ij}$, which is the number of entries in the (i,j)th cell of the table. $Y_{ij}$ follows a Possion distribution with mean $\mu_{ij}$.
+- a systematic component, $\eta_i$, that relates the relates the explanatory variables,
+$$\eta_{ij} = \sum_{j=1}^{n} \beta_{k} X_{ijk}$$
+- a link function that relates the mean of the random to the systematic component
+$$\log \mu_{ij} = \sum_{k=1}^{n}\beta_{k} X_{ijk}$$
+
+
+## Independent Model for two-way contigency table
+
+We use log-linear model to model the group mean count of each cell of the contingency table. Remember, using a log-linear model, our primary goal is to learn the interaction effects between covariates.  
+
+Again, we build the same two-way contingency table. We need to convert the contigency table in a form that is acceptable to `glm`. We do this below.
+
 ```{r}
+contigency_table = table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary)
 contigency_table.df = as.data.frame(contigency_table)
+print(contigency_table.df)
 ```
 
+Assuming each number of articles and mentor do not affect each other, we build a model of the cell count that does not take into account interaction effects. Such a model is called the *independent* model. To do this, we use formula `Freq ~ art_relative + ment`. 
+
+
 ```{r}
-log_linear_model_int <- glm(Freq ~ art_relative + ment + kid5, 
+log_linear_model_int <- glm(Freq ~ art_relative + ment, 
             data = contigency_table.df, family = poisson)
-```
-
-```{r}
 summary(log_linear_model_int)
 ```
 
+## Goodness of fit
 
-### Saturated Model
+We compare the current model to the saturated model (best possible fit).
 
 ```{r}
-log_linear_model_sat <- glm(Freq ~ art_relative*ment*kid5, 
-            data = contigency_table.df, family = poisson)
+p_value = pchisq(log_linear_model_int$deviance,
+                 log_linear_model_int$df.residual, lower.tail = F)
+print(p_value)
 ```
 
+Since our p value is less than 0.05, we reject the null hypothesis. The models are not equivalent.
+
+## Saturated Model for the two-way contingency table 
+
+Assuming each number of articles and mentor affect each other, we build a model of the cell count that takes into account all interaction effects. Such a model is called the *saturated* model. To do this, we use formula `Freq ~ art_relative*ment`. 
 
 ```{r}
+log_linear_model_sat <- glm(Freq ~ art_relative*ment, 
+            data = contigency_table.df, family = poisson)
 summary(log_linear_model_sat)
 ```
+
+## Goodness of fit
+
+We compare the current model to the saturated model (best possible fit).
+
+
+```{r}
+p_value = pchisq(0,
+                 log_linear_model_sat$df.residual, lower.tail = F)
+print(p_value)
+```
+
+We fail to reject the null hypothesis. This makes sense since the models are literally the same thing.
+
+## Model Comparison
+
+We use `anova` with `test='Chisq'` to compare the independent and saturated model. 
 
 ```{r}
 anova(log_linear_model_int,log_linear_model_sat,test='Chisq')
 ```
 
+From `anova`, we can see that the saturated model provides a statisically significant result.
+
+We use also `anova` to determine what caused the significant decrease in the deviance.
+
 ```{r}
 anova(log_linear_model_sat,test='Chisq')
 ```
+Adding `art_relative:ment` to the independent model caused significant decrease in deviance.
+
+
+## Independent Model for the three-way contingency table 
+
+Again, we build the same three-way contingency table. We need to convert the contigency table in a form that is acceptable to `glm`. We do this below.
+
+```{r}
+contigency_table = table(art_relative=bioChemists$art_binary,
+                         ment=bioChemists$ment_binary,
+                         kid5=bioChemists$kid5)
+contigency_table.df = as.data.frame(contigency_table)
+```
+
+To create the *independent* model for the three-way contingency table, we use formula `Freq ~  art_relative + ment + kid5`. 
+
+```{r}
+log_linear_model_int <- glm(Freq ~ art_relative + ment + kid5, 
+            data = contigency_table.df, family = poisson)
+summary(log_linear_model_int)
+```
+
+## Goodness of fit
+
+We compare the current model to the saturated model (best possible fit).
+
+```{r}
+p_value = pchisq(log_linear_model_int$deviance,
+                 log_linear_model_int$df.residual, lower.tail = F)
+print(p_value)
+```
+
+Since our p value is less than 0.05, we reject the null hypothesis. The models are not equivalent.
+
+
+## Saturated Model
+
+To create the *independent* model for the three-way contingency table, we use formula `Freq ~  art_relative*ment*kid5`. 
+
+
+```{r}
+log_linear_model_sat <- glm(Freq ~ art_relative*ment*kid5, 
+            data = contigency_table.df, family = poisson)
+summary(log_linear_model_sat)
+```
+## Goodness of fit
+
+We compare the current model to the saturated model (best possible fit).
+
+```{r}
+p_value = pchisq(log_linear_model_sat$deviance,
+                 log_linear_model_sat$df.residual, lower.tail = F)
+print(p_value)
+```
+We fail to reject the null hypothesis. This makes sense since the models are literally the same thing.
+
+
+
+##  Model Comparison
+
+We use `anova` with `test='Chisq'` to compare the independent and saturated model. 
+
+```{r}
+anova(log_linear_model_int,log_linear_model_sat,test='Chisq')
+```
+
+From `anova`, we can see that the saturated model provides a statisically significant result.
+
+We use also `anova` to determine what caused the significant decrease in the deviance.
+
+```{r}
+anova(log_linear_model_sat,test='Chisq')
+```
+Adding `art_relative:ment` to the independent model caused significant decrease in deviance.
+
+\newpage 
 
 # Hierarchical modeling
+
 ```{r}
 student_data <- read.csv("data/hsb1.csv")
 school_data  <- read.csv("data/hsb2.csv")
