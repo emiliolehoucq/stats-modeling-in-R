@@ -24,6 +24,8 @@ library(ggfortify,  quietly = TRUE)
 library(survminer,  quietly = TRUE)
 library(rms,  quietly = TRUE)
 library(MASS, quietly = TRUE)
+library(pscl, quietly = TRUE)
+
 ```
 
 # Generalized linear models
@@ -245,90 +247,98 @@ anova(logit,test="Chisq")
 
 \newpage
 
-# Poisson Regression
+# Poisson General Linear Model
 
+A possion GLM is used to study *count* data (i.e. discrete numbers, $0,1,2,\cdots$). *Count* data describes the number of events that occur within a given time frame.
 
-
+*insert plot of poisson distribution here*
 ```{r}
-attach(colon)
-summary(colon)
+
+
 ```
 
-```{r}
-colon_data <- na.omit(colon)
-sapply(colon_data, class)
-```
+A possion GLM is most useful when studying data in which the mean and variable are approximately equal. If they are not not equal, the standard error of the model terms must adjusted to account for the assumption violation.
+
+Poisson Regression has the following properties:
+-  a response binary variable, $Y_i$, that follows a Possion distribution with mean $\mu_i$
+- a systematic component, $\eta_i$, that relates the relates the explanatory variables,
+$\eta_i = \sum_{j=1}^{n} \beta_j x_{ij}$$
+- a link function, $log(\mu_i) = \sum_{j=1}^{n} \beta_j x_{ij}$
+
+
+From Poisson regression, we learn the *mean* of each $Y_i$ given the associated the explanatory variables.
+
+## Data
+
+We will be consider the `bioChemists` data set in this section. This data set contains number of articles produced by PhD biochemistry student during the last 3 years of their PhD.
 
 ```{r}
-colon_data$age.ds = sapply(colon_data$age,
-                          function(x) ifelse(x > median(age), 1, 0))
-colon_data$age.ds <- factor(colon_data$age.ds, 
-                            levels= c("0","1"),
-                            labels=c("<median",">median"))
+attach(bioChemists)
+summary(bioChemists)
 ```
 
-```{r}
-colon_data$node4 <- factor(colon_data$node4, 
-                          levels= c("0","1"), 
-                          labels=c("<4",">4"))
-```
+ The data set also contains demographic data associated with each student.  data of the flower of certain plant species. The data set has five variables:
+
+- *art* - number of articles produced by the student in the last 3 years of their PhD
+- *fem* - gender
+- *mar* - martial status
+- *kid5* - number of children less than 5
+- *phd* - pretige of PhD program
+- *ment* - number of articles of the mentor in the last 3 years
+
 
 ```{r}
-colon_data$sex <- factor(colon_data$sex,
-                        levels= c("0","1"), labels=c("F","M"))
+sapply(bioChemists, class)
 ```
 
-```{r}
-colon_data$obstruct <- factor(colon_data$obstruct,
-                             levels= c("0","1"),
-                            labels=c("no obstruct","obstruct"))
-colon_data$adhere <- factor(colon_data$adhere,
-                            levels= c("0","1"),
-                            labels=c("no adhere","adhere"))
-colon_data$perfor <- factor(colon_data$perfor, 
-                            levels= c("0","1"), 
-                            labels=c("no perfor","perfor"))
-```
+I convert `bioChemists$kid5` from numeric to factor. This will be used later.
 
 ```{r}
-colon_data$differ <- factor(colon_data$differ,
-                            levels= c("1","2","3"),
-                            labels=c("well","mod","poor"))
-colon_data$extent <- factor(colon_data$extent, 
-                            levels= c("1","2","3","4"),
-                            labels=c("submucosa", "muscle", "serosa", "contiguous"))
-colon_data$surg <- factor(colon_data$surg,
-                          levels= c("0","1"), 
-                          labels=c("short","long"))
+bioChemists$kid5 <- factor(bioChemists$kid5, 
+                            levels= unique(bioChemists$kid5),
+                            labels= unique(bioChemists$kid5))
 ```
 
+
+Plotting the bar graph of `bioChemists$art`, we can see than the data looks Poisson-like since there is large number of observations at 0.
+
 ```{r}
-ggplot(colon_data,aes(x=colon_data$nodes))+ 
+ggplot(bioChemists,aes(x=bioChemists$art))+ 
   geom_histogram(binwidth = 1, center = 1) +
-  scale_x_continuous(breaks=seq(0,max(colon_data$nodes), by = 1))+
-  ylab("Count")+ xlab("data")+
-  ggtitle("Histogram plot of the number of epileptic seizures")
+  scale_x_continuous(breaks=seq(0,max(bioChemists$art), by = 1))+
+  ylab("Frequency")+ xlab("data")+
+  ggtitle("Histogram plot of the number of articles published by biochemist phd students in last 3 years")
 ```
 
+We can "quantify" the Poission-ness by analyzing the mean and variance of the data.
 ```{r}
-poisson_model = glm(nodes ~ 1, family=poisson(link=log),data=colon_data)
+mean(bioChemists$art)
+var(bioChemists$art)
+```
+
+Although mean and variance are not equal, we will still fit it to Poisson distribution. 
+
+
+## Possion Regression with constant term
+
+```{r}
+poisson_model = glm(art ~ 1, family=poisson(link=log),data=bioChemists)
 summary(poisson_model)
 ```
 
+The constant term is the mean number of counts.
 
 ```{r}
 print(coef(poisson_model))
 ```
 
 ```{r}
-head(data.frame(colon_data$nodes,poisson_model$fitted))
+print(log(mean(bioChemists$art)))
 ```
 
-```{r}
-head(poisson_model$linear.predictors)
-head(exp(poisson_model$linear.predictors))
-```
-## Hypothesis test for goodness of fit
+### Hypothesis test for goodness of fit
+
+**TODO**should i reject the null in this case?
 
 ```{r}
 p_value = pchisq(poisson_model$deviance,
@@ -344,18 +354,20 @@ print(p_value)
 ```
 
 
-## add a Covariate to the fit -- treatment
+## Possion Regression with martial status covariate
+
 ```{r}
-poisson_model = glm(nodes~ 1 + rx, family=poisson(link=log),data=colon_data)
+poisson_model = glm(art~ 1 + mar , family=poisson(link=log),data=bioChemists)
 summary(poisson_model)
 ```
 
 ```{r}
-plot(colon_data$nodes)
-points(poisson_model$fitted,col="red")
+plot(bioChemists$art)
+points(poisson_model$fitted[bioChemists$mar=='Single'],col="red")
+points(poisson_model$fitted[bioChemists$mar=='Married'],col="blue")
 ```
 
-## Hypothesis test for goodness of fit
+### Hypothesis test for goodness of fit
 
 ```{r}
 p_value = pchisq(poisson_model$deviance,
@@ -376,15 +388,17 @@ anova(poisson_model,test="Chisq")
 
 
 
-### add a Covariate to the fit -- treatment, time
+##  Possion Regression with martial status and children covariate
+
+*TODO* why are interaction factors NA
 
 ```{r}
-poisson_model = glm(nodes ~ 1 + rx + time,
-                    family=poisson(link=log),data=colon_data)
+poisson_model = glm(art ~ 1 + kid5 + mar,
+                    family=poisson(link=log),data=bioChemists)
 summary(poisson_model)
 ```
 
-## Hypothesis test for goodness of fit
+### Hypothesis test for goodness of fit
 
 ```{r}
 p_value = pchisq(poisson_model$deviance,
@@ -403,19 +417,24 @@ print(p_value)
 anova(poisson_model,test="Chisq")
 ```
 
-### add a Covariate to the fit -- treatment, time interaction
+
+##  Possion Regression with martial status, children and number of mentor articles
+
 
 ```{r}
-poisson_model = glm(nodes ~ 1 + rx*time,
-                    family=poisson(link=log),data=colon_data)
+poisson_model = glm(art ~ 1 + kid5 + mar + ment,
+                    family=poisson(link=log),data=bioChemists)
 summary(poisson_model)
 ```
+
+### Hypothesis test for goodness of fit
 
 ```{r}
 p_value = pchisq(poisson_model$deviance,
                  poisson_model$df.residual, lower.tail = F)
 print(p_value)
 ```
+
 
 ```{r}
 p_value = pchisq(poisson_model$null.deviance-logit$deviance,
@@ -426,6 +445,7 @@ print(p_value)
 ```{r}
 anova(poisson_model,test="Chisq")
 ```
+
 
 \newpage
 
@@ -440,23 +460,25 @@ Contingency table displays number of observations for a given combination of fac
 This definition is best represented by an example. 
 
 ```{r}
-epil$y_binary <- sapply(epil$y,function(x) ifelse(x > median(epil$y), 1, 0))
+bioChemists$art_binary <- sapply(bioChemists$art,function(x) ifelse(x > 2, 1, 0))
+bioChemists$ment_binary <- sapply(bioChemists$ment,function(x) ifelse(x > median(bioChemists$ment), 1, 0))
+
 ```
 
 ### One-Way Contingency Table
 ```{r}
-table(y_relative_median=epil$y_binary)
+table(art_relative=bioChemists$art_binary)
 ```
 
 ## Two-Way Contingency Table
 ```{r}
-table(y_relative_median=epil$y_binary,period=epil$period)
+table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary)
 ```
 
 ### Independent Model
 
 ```{r}
-contigency_table = table(y_relative_median=epil$y_binary,period=epil$period)
+contigency_table = table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary)
 ```
 
 Need to convert contigency table in a form that is acceptable to `glm`
@@ -465,7 +487,7 @@ contigency_table.df = as.data.frame(contigency_table)
 ```
 
 ```{r}
-log_linear_model <- glm(Freq ~ y_relative_median + period, 
+log_linear_model <- glm(Freq ~ art_relative + ment, 
             data = contigency_table.df, family = poisson)
 ```
 
@@ -475,7 +497,7 @@ summary(log_linear_model)
 ### Saturated Model
 
 ```{r}
-log_linear_model <- glm(Freq ~ period*y_relative_median, 
+log_linear_model <- glm(Freq ~ art_relative*ment, 
             data = contigency_table.df, family = poisson)
 ```
 
@@ -489,13 +511,15 @@ anova(log_linear_model,test='Chisq')
 
 ## Three-Way Contingency Table
 ```{r}
-table(y_relative_median=epil$y_binary,period=epil$period,trt=epil$trt)
+table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary,
+      kid5=bioChemists$kid5)
 ```
 
 ### Independent Model
 ```{r}
-contigency_table = table(y_relative_median=epil$y_binary,
-                         period=epil$period,trt=epil$trt)
+contigency_table = table(art_relative=bioChemists$art_binary,
+                         ment=bioChemists$ment_binary,
+                         kid5=bioChemists$kid5)
 ```
 
 Need to convert contigency table in a form that is acceptable to `glm`
@@ -504,28 +528,33 @@ contigency_table.df = as.data.frame(contigency_table)
 ```
 
 ```{r}
-log_linear_model <- glm(Freq ~ y_relative_median + period + trt, 
+log_linear_model_int <- glm(Freq ~ art_relative + ment + kid5, 
             data = contigency_table.df, family = poisson)
 ```
 
 ```{r}
-summary(log_linear_model)
+summary(log_linear_model_int)
 ```
+
 
 ### Saturated Model
 
 ```{r}
-log_linear_model <- glm(Freq ~ period*y_relative_median*trt, 
+log_linear_model_sat <- glm(Freq ~ art_relative*ment*kid5, 
             data = contigency_table.df, family = poisson)
 ```
 
 
 ```{r}
-summary(log_linear_model)
+summary(log_linear_model_sat)
 ```
 
 ```{r}
-anova(log_linear_model,test='Chisq')
+anova(log_linear_model_int,log_linear_model_sat,test='Chisq')
+```
+
+```{r}
+anova(log_linear_model_sat,test='Chisq')
 ```
 
 # Hierarchical modeling
