@@ -228,11 +228,18 @@ km_fit <- survfit(surv~obstruct, data=colon_subset_recurrence)
 summary(km_fit,times=c(1,10,20,30,40,50))
 ```
 
+
+
 ```{r}
 ggsurvplot(km_fit, data = colon_subset_recurrence, 
            pval = TRUE,conf.int = TRUE,
            risk.table = TRUE, ggtheme = theme_bw(),
            risk.table.col = "strata")
+```
+
+
+```{r}
+survdiff(surv~adhere + obstruct,data=colon_subset_recurrence)
 ```
 
 ###  Kalpan-Meier Estimator for the data divided into adhere and no adhere
@@ -285,6 +292,9 @@ ggsurvplot(km_fit, data = colon_subset_recurrence,
 ```
 
 
+```{r}
+survdiff(surv~adhere + obstruct,data=colon_subset_recurrence)
+```
 \newpage
 
 ## Cox Proportional Hazard
@@ -478,26 +488,45 @@ ggsurvplot(prediction_one, fun="cumhaz",
 
 ## Accelerated failure time models
 
-Accelerated failure time model assume the functional form of $\lambda_0(t)$. While this makes the model fully parametric, this introduces errors in our model if $\lambda_0(t)$ is of the wrong form. 
+Accelerated failure time model assume that the log time for an event to occur is a function of the covariates of the data. That is,
+
+$$\log T_i = \beta_1 X_{1i} + \cdots + \beta_n X_{ni} + \varepsilon_i$$
+
+where $\varepsilon$ is a random error term that follows a distribution. 
+
+This is called an `accelerated` failure model since covariates can scale the base time distribution, $T_0$, by their effects.
+
+
+$$ T_i =  T_0\exp(\beta_1 X_{1i} + \cdots + \beta_n X_{ni})$$
+ where $T_0 = \exp(\varepsilon_i)$.
+ 
+There is difference between proportional hazard models (PH) and accelerated failure time models (AFT). The effect of the covariates in PH models act multiplicately on the base hazard. However, in AFT models, these effects act multiplicately on the base time. Despite this difference, it is possible that AFT models are also PH models.
+
 
 We use the function, `survreg`, to fit accelerated failure time models. The argument, `dist`, specifies the distribution which implies the form of $\lambda_0(t)$. We will be considering:
 
 - exponential models, `dist="exponential"`
 - weibull models, `dist="weibull"`
+- lognormal models, `dist="lognormal"`
+
+These are fully parameteric model and are thus a suitable alterative Kaplan-Meier estimators and Cox Proportional Hazard models. However, AFT assume the function form $T_0$ and, thus, the baseline hazard and the baseline survival functions. Incorrect assumptions introduce errors in our modeling.
 
 ### Exponential models
 
-This assumes that $\lambda_0(t)$ is a constant, $\lambda$. 
+Exponential accelerated failure time models are also proportional hazard models. Exponential accelerated failure time models assume that $T_0$ follows a exponential distribution with parameter $\lambda$.
 
-$$\lambda_0(t) = \lambda$$
-Therefore, the hazard function is now
+From our definitions of terms and with some probability theory (not covered), the hazard and survival function of an exponential AFT models are
 
-$$\lambda_i(t) = \lambda\exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right).$$
+$$\lambda_i(t) = \lambda\exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right)$$
+
+$$\text{and  } S_i(t) = \exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right)S_{0}(t), \, \, S_{0}(t) = \exp(-\lambda t).$$
+
+As proportional hazard model, exponential accelerated failure time models assumes that the baseline hazard is constant, $\lambda_0(t) = \lambda$. 
 
 
-`survreg` learns the parameter value, $\lambda$, and the regression coefficients.
+####  Learning Exponential models
 
-As an example, we will be consider the model: `surv ~ 1 + obstruct + adhere + nodes.ds + age` for all the accelerated time models.
+`survreg` learns the parameter value, $\lambda$, and the regression coefficients. As an example, we will be consider the model: `surv ~ 1 + obstruct + adhere + nodes.ds`.
 
 ```{r}
 survregExp <- survreg(surv ~ 1 + obstruct + adhere + nodes.ds,
@@ -507,25 +536,31 @@ summary(survregExp)
 
 Therefore, $\lambda = \exp(8.08361)$.
 
-### Plot of data point
+#### Estimating Survival Curve
 
 ```{r}
-subject_two = list(obstruct = factor('no obstruct'), adhere = factor('adhere'), nodes.ds = factor('<3'))
+subject_two = list(obstruct = factor('obstruct'), adhere = factor('no adhere'), nodes.ds = factor('<3'))
 
 plot(predict(survregExp, newdata=subject_two,
              type="quantile",p=seq(.01,.99,by=.01)),
      seq(.99,.01,by=-.01), col="red",type='l',xlab='time',
-     ylab='Survival probability',main='Exponential Model')
-detach(colon)
+     ylab='Survival probability',main='Exponential AFT Model')
 ```
 ### Weibull models
 
-This assumes that $\lambda_0(t) = \lambda \gamma t^{\gamma -1}$. 
+Weibull accelerated failure time models are also proportional hazard models. Weibull accelerated failure time models assume that $T_0$ follows a Weibull distribution with parameters, $\lambda$ and $\gamma$. 
 
-Therefore, the hazard function is now
+From our definitions of terms and with some probability theory (not covered), the hazard and survival function of a Weibull AFT models are
 
 $$\lambda_i(t) = \lambda \gamma t^{\gamma -1} \exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right).$$
 
+$$\text{and  } S_i(t) = \exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right)S_{0}(t), \, \, S_{0}(t) = \exp(-(\lambda t)^{\gamma}).$$
+
+As proportional hazard model, Weibull accelerated failure time models assumes that the baseline hazard is constant, $\lambda \gamma t^{\gamma -1}$. One can see that exponential accelerated failure time models are a special case of Weibull accelerated failure time models with $\gamma = 1$.
+
+
+
+####  Learning Weibull models
 
 `survreg` learns the parameter value, $\lambda$ and $\gamma$,and the regression coefficients.
 
@@ -539,11 +574,11 @@ summary(survregWeibull)
 
 Therefore,
 
-$$\gamma = \exp(-0.3487)$$
+$$\gamma = \exp(0.3487)$$
 
-$$\lambda = \exp(-8.7024\times \gamma)$$
+$$\lambda = \exp(8.7024\times \gamma)$$
 
-### Plot of data point
+### Estimating Survival Curve
 
 ```{r}
 subject_two = list(obstruct = factor('no obstruct'), 
@@ -553,7 +588,40 @@ subject_two = list(obstruct = factor('no obstruct'),
 plot(predict(survregWeibull, newdata=subject_two,
              type="quantile",p=seq(.01,.99,by=.01)),
      seq(.99,.01,by=-.01), col="red",type='l',xlab='time',
-     ylab='Survival probability',main='Weibull Model')
+     ylab='Survival probability',main='Weibull AFT Model')
+
+```
+
+
+### Log-normal models
+
+Log-normal accelerated failure time models assume that $T_0$ follows a log normal distribution with a scale parameter. Log-normal accelerated failure time models are not proportional hazard models.
+
+The hazard and survival function of a log-normal AFT models are a bit complicated so they will not be shown here.
+
+####  Learning Weibull models
+
+`survreg` learns the parameter value, $\lambda$ and $\gamma$,and the regression coefficients.
+
+As an example, we will be consider the model: `surv ~ 1 + obstruct + adhere + nodes.ds + age` for all the accelerated time models.
+
+```{r}
+survregLogNormal = survreg(surv ~ 1 + obstruct + adhere + nodes.ds,
+                 dist="lognormal",data=colon_subset_recurrence)
+summary(survregLogNormal)
+```
+
+### Estimating Survival Curve
+
+```{r}
+subject_two = list(obstruct = factor('no obstruct'), 
+                   adhere = factor('adhere'), 
+                   nodes.ds = factor('<3'))
+
+plot(predict(survregLogNormal, newdata=subject_two,
+             type="quantile",p=seq(.01,.99,by=.01)),
+     seq(.99,.01,by=-.01), col="red",type='l',xlab='time',
+     ylab='Survival probability',main='Log Normal AFT Model')
 
 ```
 
