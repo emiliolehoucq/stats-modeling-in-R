@@ -1,8 +1,8 @@
 ---
 title: "Part III: Survival Models"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 # Load Packages 
@@ -478,11 +478,58 @@ ggsurvplot(prediction_one, fun="cumhaz",
 
 ## Accelerated failure time models
 
+Accelerated failure time model assume the functional form of $\lambda_0(t)$. While this makes the model fully parametric, this introduces errors in our model if $\lambda_0(t)$ is of the wrong form. 
+
+We use the function, `survreg`, to fit accelerated failure time models. The argument, `dist`, specifies the distribution which implies the form of $\lambda_0(t)$. We will be considering:
+
+- exponential models, `dist="exponential"`
+- weibull models, `dist="weibull"`
+
+### Exponential models
+
+This assumes that $\lambda_0(t)$ is a constant, $\lambda$. 
+
+$$\lambda_0(t) = \lambda$$
+Therefore, the hazard function is now
+
+$$\lambda_i(t) = \lambda\exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right).$$
+
+
+`survreg` learns the parameter value, $\lambda$, and the regression coefficients.
+
+As an example, we will be consider the model: `surv ~ 1 + obstruct + adhere + nodes.ds + age` for all the accelerated time models.
+
 ```{r}
-survregExp <- survreg(surv ~ 1 + obstruct + adhere + nodes.ds + age,
+survregExp <- survreg(surv ~ 1 + obstruct + adhere + nodes.ds,
                             dist="exponential",data=colon_subset_recurrence)
 summary(survregExp)
 ```
+
+Therefore, $\lambda = \exp(8.08361)$.
+
+### Plot of data point
+
+```{r}
+subject_two = list(obstruct = factor('no obstruct'), adhere = factor('adhere'), nodes.ds = factor('<3'))
+
+plot(predict(survregExp, newdata=subject_two,
+             type="quantile",p=seq(.01,.99,by=.01)),
+     seq(.99,.01,by=-.01), col="red",type='l',xlab='time',
+     ylab='Survival probability',main='Exponential Model')
+detach(colon)
+```
+### Weibull models
+
+This assumes that $\lambda_0(t) = \lambda \gamma t^{\gamma -1}$. 
+
+Therefore, the hazard function is now
+
+$$\lambda_i(t) = \lambda \gamma t^{\gamma -1} \exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right).$$
+
+
+`survreg` learns the parameter value, $\lambda$ and $\gamma$,and the regression coefficients.
+
+As an example, we will be consider the model: `surv ~ 1 + obstruct + adhere + nodes.ds + age` for all the accelerated time models.
 
 ```{r}
 survregWeibull = survreg(surv ~ 1 + obstruct + adhere + nodes.ds,
@@ -490,22 +537,24 @@ survregWeibull = survreg(surv ~ 1 + obstruct + adhere + nodes.ds,
 summary(survregWeibull)
 ```
 
+Therefore,
+
+$$\gamma = \exp(-0.3487)$$
+
+$$\lambda = \exp(-8.7024\times \gamma)$$
+
+### Plot of data point
+
 ```{r}
-survregLognormal = survreg(surv ~ 1 + obstruct + adhere + nodes.ds,
-                 dist="lognormal", data=colon_subset_recurrence)
-summary(survregLognormal)
-```
+subject_two = list(obstruct = factor('no obstruct'), 
+                   adhere = factor('adhere'), 
+                   nodes.ds = factor('<3'))
 
-### create a new subject and see their survival curve
+plot(predict(survregWeibull, newdata=subject_two,
+             type="quantile",p=seq(.01,.99,by=.01)),
+     seq(.99,.01,by=-.01), col="red",type='l',xlab='time',
+     ylab='Survival probability',main='Weibull Model')
 
-need to fix
-```{r}
-subject_two = list(obstruct = factor('no obstruct'), adhere = factor('adhere'), nodes.ds = factor('<3'))
-
-#prediction_two = survfit(sr_fit, subject_two, data = colon_subset_recurrence)
-#plot(predict(sr_fit, newdata=subject_two,type="quantile",p=seq(.01,.99,by=.01)),seq(.99,.01,by=-.01),
-#     col="red",type='l',xlab='time',ylab='Survival probability',main='Weibull')
-detach(colon)
 ```
 
 \newpage
