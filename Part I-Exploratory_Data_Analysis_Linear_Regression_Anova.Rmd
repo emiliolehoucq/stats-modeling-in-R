@@ -349,6 +349,7 @@ anova(ols)
 Covariance measures how well two variables vary together.
 
 For an linear model, variance-covariance matrix is described by: 
+
 -  $(i,j)$ entry that is the covariance between the $i$th coefficent and the $j$ coefficient.
 -  $(i,i)$ entry entry is the variance for the $i$th coefficent.
 

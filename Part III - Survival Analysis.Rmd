@@ -479,8 +479,21 @@ ggsurvplot(prediction_one, fun="cumhaz",
 ## Accelerated failure time models
 
 ```{r}
-sr_fit = survreg(surv ~ 1 + obstruct + adhere + nodes.ds, dist="weibull",data=colon_subset_recurrence)
-summary(sr_fit)
+survregExp <- survreg(surv ~ 1 + obstruct + adhere + nodes.ds + age,
+                            dist="exponential",data=colon_subset_recurrence)
+summary(survregExp)
+```
+
+```{r}
+survregWeibull = survreg(surv ~ 1 + obstruct + adhere + nodes.ds,
+                 dist="weibull",data=colon_subset_recurrence)
+summary(survregWeibull)
+```
+
+```{r}
+survregLognormal = survreg(surv ~ 1 + obstruct + adhere + nodes.ds,
+                 dist="lognormal", data=colon_subset_recurrence)
+summary(survregLognormal)
 ```
 
 ### create a new subject and see their survival curve
