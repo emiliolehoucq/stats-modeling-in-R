@@ -520,7 +520,6 @@ qqline(std_res)
 ### Residual plots
 
 ```{r}
-par(mfrow=c(2,2))
 plot(res ~ pred, xlab="Fitted", ylab="Residual", main="Residual plot against fitted values")
 abline(h=0)
 plot(res ~ data$Sepal.Length, xlab="X", ylab="Residual", main="Residual plot against X")

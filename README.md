@@ -8,7 +8,6 @@ The purpose of the workshop is to introduce students in how to conduct statistic
 
 Students are expected to have knowledge of R and regression analysis.
 
-
 ## Packages
 
 This workshop requires packages: **pastecs, lm.beta, lmtest, foreign, lattice, lme4, nlme, survival, dplyr, ggfortify, survminer, rms, MASS.**
@@ -21,7 +20,7 @@ The presentations are available in the [**slides** directory](https://github.com
 
 ### Recommended: Entire directory
 
-You can download all of the files by clicking the green button above and choosing "Download ZIP."
+You can download all of the files by clicking the green button ("Clone or download") above and choosing "Download ZIP."
 
 ### Individual Files
 
@@ -51,3 +50,5 @@ See [Resources](https://github.com/nuitrcs/pythonworkshops/blob/master/resources
 [Tutorial on Survival Analysis](https://rstudio-pubs-static.s3.amazonaws.com/300535_2a8382af47714d0aaa3f4cce9a7645a3.html): pretty good discussion of comparsion of survival techniques.
 
 [Survival Analysis Cheat Sheet](https://rpkgs.datanovia.com/survminer/survminer_cheatsheet.pdf): common models and steps
+
+[Hierarchical models](https://www.sree.org/courses/hlm/): modules on hierarchical linear models (extension module 4 is on R)

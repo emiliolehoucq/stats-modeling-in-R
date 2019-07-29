@@ -799,8 +799,8 @@ Adding `art_relative:ment` to the independent model caused significant decrease 
 # Hierarchical modeling
 
 ```{r}
-student_data <- read.csv("data/hsb1.csv")
-school_data  <- read.csv("data/hsb2.csv")
+student_data <- read.csv("hsb1.csv")
+school_data  <- read.csv("hsb2.csv")
 student_data$ses_grandmean <- student_data$ses - mean(student_data$ses) # Grand-mean centered student SES 
 school_data$sm_ses_grandmean <- school_data$meanses - mean(school_data$meanses) # Grand-mean centered school SES
 
@@ -822,12 +822,7 @@ xyplot(mathach ~ ses |as.factor(id), subset,
                         col.line = 'black',
                         type = c("p", "smooth"),
                         main = 'Variability in Math Achievement ~ SES Relationship')
-
-xyplot(mathach ~ ses, subset,
-       type = c("p", "smooth"),
-       group = data$id,
-       main = 'Variability in Math Achievement ~ SES Relationship')
-
+                        
 unconditional <- lmer(mathach ~ 1 + (1|id), data = data)
 summary(unconditional) # on p-values in nlme: https://stat.ethz.ch/pipermail/r-help/2006-May/094765.html
 confint(unconditional) # you can also just calculate an approximate 95% confidence interval yourself: estimate +/- 2(SE) (in this case: 12.64 +/- 2(0.24))
