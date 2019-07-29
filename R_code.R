@@ -165,8 +165,8 @@ abline(h=0)
 
 # See also function vif() in package "car"
 VIF <- rep(0,2)
-VIF[1] <- 1/(1-summary(lm(Sepal.Width ~ Sepal.Length, data = data))$r.squared)
-VIF[2] <- 1/(1-summary(lm(Sepal.Width ~ as.factor(Species), data = data))$r.squared)
+VIF[1] <- 1/(1-summary(lm(Species ~ Sepal.Length, data = data))$r.squared)
+VIF[2] <- 1/(1-summary(lm(Sepal.Length ~ as.factor(Species), data = data))$r.squared)
 VIF
 
 ## Test for heteroskedasticity
