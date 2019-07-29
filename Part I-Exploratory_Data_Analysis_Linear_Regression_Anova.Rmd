@@ -530,9 +530,7 @@ abline(h=0)
 
  See also function vif() in package "car"
 ```{r}
-VIF <- rep(0,2)
-VIF[1] <- 1/(1-summary(lm(Species ~ Sepal.Length, data = data))$r.squared)
-VIF[2] <- 1/(1-summary(lm(Sepal.Length ~ as.factor(Species), data = data))$r.squared)
+VIF <- 1/(1-summary(lm(Sepal.Length ~ as.factor(Species), data = data))$r.squared)
 VIF
 ```
 
@@ -551,7 +549,7 @@ plot(case, rstudent(ols_quadratic), type="l", xlab="Case Numbers",
      ylab="Studentized Deleted Residuals", main="Test for Outlying Y Values")
 text(case, rstudent(ols_quadratic), case)
 alpha <- 0.05
-crit <- qt(1-alpha/2n, n-p-1)
+crit <- qt(1-alpha/(2*n), n-p-1)
 which(abs(rstudent(ols_quadratic)) >=crit ) # Here there's no evidence of outlying Y observations
 ```
 ### Test for outlying X observations--hat matrix leverage values
