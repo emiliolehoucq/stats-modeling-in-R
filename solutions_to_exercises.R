@@ -176,6 +176,8 @@ legend(5,0.9, c("logistic","loess smooth"), col=c("red", "green"), lty=c(1:2))
 
 # Hierarchical modeling
 
+# 36
+
 wvs <- read.dta("~/Downloads/WV6_Data_Stata_v20180912.dta")
 
 table(wvs$V197)
@@ -197,21 +199,21 @@ wvs$educ <- factor(wvs$educ, levels = c(0, 1, 2))
 
 table(wvs$V2)
 
-# XX
+# 37
 
 xyplot(V197 ~ V248 | as.factor(V2), wvs,
        col.line = 'black',
        type = c("p", "r"),
        main = 'Variability in valuation of sci and tech ~ educ relationship')
 
-# XX
+# 38
 
 rirs <- lmer(V197 ~ 1 + relevel(educ, ref = "2") + (1 + relevel(educ, ref = "2") | V2), data = wvs)
 summary(rirs)
 rirs_2 <- lme(V197 ~ 1 + relevel(educ, ref = "2"), random = ~ 1 + relevel(educ, ref = "2") | V2, data = wvs, na.action = na.exclude)
 summary(rirs_2)
 
-# XX
+# 39
 
 table(wvs$V9)
 wvs$V9 <- as.numeric(wvs$V9)
@@ -224,14 +226,14 @@ summary(fsltv)
 fsltv_2 <- lme(V197 ~ 1 + relevel(educ, ref = "2") + rel_grand_mean_centered, random = ~ 1 | V2, data = wvs, na.action = na.exclude)
 summary(fsltv_2)
 
-# XX
+# 40
 
 rscli <- lmer(V197 ~ 1 + relevel(educ, ref = "2")*rel_grand_mean_centered + (0 + relevel(educ, ref = "2") |V2), data = wvs)
 summary(rscli)
 rscli_2 <- lme(V197 ~ 1 + relevel(educ, ref = "2")*rel_grand_mean_centered, random = ~ 0 + relevel(educ, ref = "2") | V2, data = wvs, na.action = na.exclude)
 summary(rscli_2)
 
-# XX
+# 41
 
 wvs$sci_tech_val <- ifelse(wvs$V197 %in% c(1:5), 0, 1)
 table(wvs$sci_tech_val)
