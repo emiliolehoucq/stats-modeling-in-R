@@ -1,5 +1,6 @@
 # Statistical Modeling in R
 
+## Description of Workshop
 Emilio Lehoucq and Andre Archer
 
 This workshop is part of the Summer Data Science Workshops hosted by Research Computing Services at Northwestern University (2019).
