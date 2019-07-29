@@ -1,10 +1,10 @@
 # Exercises
 
-1. Read the GSS2006 data in R.
-
 # Part I
 
 ## Descriptive statistics
+
+1. Read the GSS2006 data in R.
 
 2. Provide univariate descriptive statistics for socsci, age, partyid, and sex.
 
