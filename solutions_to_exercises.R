@@ -123,8 +123,8 @@ abline(h=0)
 # 15
 
 VIF <- rep(0,2)
-VIF[1] <- 1/(1-summary(lm(socsci~relevel(partyid, ref = "independent"),data=gss_2006))$r.squared)
-VIF[2] <- 1/(1-summary(lm(socsci~age,data=gss_2006))$r.squared)
+VIF[1] <- 1/(1-summary(lm(age~relevel(partyid, ref = "independent"),data=gss_2006))$r.squared)
+VIF[2] <- 1/(1-summary(lm(partyid~age,data=gss_2006))$r.squared)
 VIF
 
 # 16
@@ -139,7 +139,7 @@ plot(case, rstudent(ols_2), type="l", xlab="Case Numbers",
      ylab="Studentized Deleted Residuals", main="Test for Outlying Y Values")
 text(case, rstudent(ols_2), case)
 alpha <- 0.05
-crit <- qt(1-alpha/2/n, n-p-1)
+crit <- qt(1-alpha/2n, n-p-1)
 which(abs(rstudent(ols_2)) >=crit ) # There's no evidence of outlying Y observations
 
 # Logistic regression
