@@ -145,11 +145,6 @@ summary(step_2)
 
 # Diagnostics
 
-## Test for lack of fit (?????????)
-
-full <- lm(Sepal.Width ~ as.factor(Sepal.Length)*as.factor(I(Sepal.Length^2))*as.factor(Species), data=data)
-anova(ols_quadratic, full)
-
 ## Normal probability plot
 
 std_res <- rstandard(ols_quadratic)
