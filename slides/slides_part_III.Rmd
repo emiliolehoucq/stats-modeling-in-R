@@ -1,10 +1,8 @@
 ---
-title: "Part III: Survival Models"
+title: "Part III: Survival Analysis"
 output:
-  pdf_document: default
-  html_document: default
+  beamer_presentation 
 ---
-
 # Load Packages 
 
 Again, we must load the packages that will be used in the first part of this workshop.
@@ -26,10 +24,13 @@ library(rms,  quietly = TRUE)
 library(MASS, quietly = TRUE)
 ```
 
+---
 
 # Introduction 
 
 Survival models concerns the analysis of the time for an event to occur. The response variable is the time for the event to occur. The event is generally called "death."
+
+---
 
 ## Definitions
 
@@ -39,13 +40,20 @@ Survival models involve two functions:
 $S(t)$ is probability that death has not occurred until after time, $t$.
 
 - $\lambda(t)$: the hazard function. 
-$$\lambda(t) = \frac{\text{probability of dying in at time, } t}{\text{probability of survival until time, } t} \approx \frac{\text{number of people who died at time, } t}{\text{number of people who lived until time, } t}$$ 
+\begin{align*}
+\lambda(t) &= \frac{\text{probability of dying in at time, } t}{\text{probability of survival until time, } t} \\
+&\approx \frac{\text{number of people who died at time, } t}{\text{number of people who lived until time, } t}
+\end{align*}
+
 $\lambda(t)$ measures the likelihood of death in a very small time interval, $t$ and $t+dt$. It is a measure of *risk*.
 
 - $\Lambda(t)$: the cumulative hazard. It is total hazard from $0$ to time, $t$.
 
+---
 
-**Note that these functions are related:** 
+## Definitions
+
+**Note that these functions are related.** 
 
 - $\lambda(t) \leftrightarrow S(t)$ 
 $$ \lambda(t) = -\frac{d}{dt} \log S(t)$$
@@ -55,15 +63,30 @@ $$\Lambda(t)=\int_0^t \lambda(t) \, dt $$
 
 $$ S(t) =\exp\left(-\Lambda(t)\right) = \exp\left(-\int_0^t \lambda(t)\, dt\right).$$
 
+
+---
+
 ## Censoring
 
-Like most models, survival models suceptible to imperfect data. Let's say a subject is recorded for a study up until a time, $t^{\ast}$. After time $t^{\ast}$, the subject may decide not to continue with study or it is not possible to locate the subject. Many things could have caused a lack of follow up. This subject is called *censored*. While it maybe reasonable to discard this data point, the censored data actually contains information that we know the event has not occurred prior to $t^{\ast}.$ This gives more information to our model about  time prior to $t^{\ast}$ than if we were to discard the censored data.
+Like most models, survival models suceptible to imperfect data. Let's say a subject is recorded for a study up until a time, $t^{\ast}$. 
+
+After time $t^{\ast}$, the subject may decide not to continue with study or it is not possible to locate the subject. Many things could have caused a lack of follow up. This subject is called *censored*. 
+
+While it maybe reasonable to discard this data point, the censored data actually contains information that we know the event has not occurred prior to $t^{\ast}.$ 
+
+This gives more information to our model about  time prior to $t^{\ast}$ than if we were to discard the censored data.
+
+---
 
 # Data
 
 ## Description 
 
 We will be working the `colon` data set. This data comes from one of the first successful trials of a drug for colon cancer. The recurrence and death times are recorded for all patients in the study. 
+
+---
+
+## Description 
 
 The `colon` dataset has the following columns:
 
@@ -78,19 +101,34 @@ The `colon` dataset has the following columns:
 - `nodes`:	number of lymph nodes with detectable cancer
 - `time`:	days until event or censoring
 - `status`:	censoring status
+
+---
+
+## Description 
+
+
 - `differ`:	differentiation of tumour (1=well, 2=moderate, 3=poor)
 - `extent`:	Extent of local spread (1=submucosa, 2=muscle, 3=serosa, 4=contiguous structures)
 - `surg`:	time from surgery to registration (0=short, 1=long)
 - `node4`:	more than 4 positive lymph nodes
 - `etype`:	event type: 1=recurrence,2=death
 
-```{r}
+---
+
+## Description 
+
+\tiny
+
+```{r,out.width='30%'}
 attach(colon)
 head(colon)
 ```
 
+\normalsize
 
-## Subsetting data and converting data
+----
+
+## Subsetting data converting data
 
 We will be studying the recurrence event of colon cancer.
 
@@ -98,45 +136,62 @@ We will be studying the recurrence event of colon cancer.
 colon_subset_recurrence = colon[colon$etype==1,]
 ```
 
-Some survival models can only handle variables encoded in 0 and 1. We need to convert continuous variables, such as age and nodes, to 0 and 1. 
+---
 
-```{r}
-colon_subset_recurrence$age.ds = sapply(colon_subset_recurrence$age,
-                                        function(x) ifelse(x > 60, 1, 0))
+## Converting data
+
+Some survival models can only handle variables encoded in 0 and 1. 
+
+
+\tiny
+```{r,out.width='50%'}
+head(colon_subset_recurrence)
 ```
+\normalsize
 
-If the binary variables are stored as `numeric` variables, the survival models will treat the explanatory variables as continuous variables rather than as discrete variables.
 
-```{r}
-sapply(colon,class)
+---
+
+## Converting data
+
+While some variables are encoded in 0 and 1, they are stored as `numeric` variables.
+ 
+If binary variables are stored as `numeric` variables, the survival models will treat the explanatory variables as continuous variables rather than as discrete variables.
+
+
+\tiny
+```{r,out.width='50%'}
+sapply(colon_subset_recurrence,class)
 ```
+\normalsize
 
-Many discrete variables are stored as `numeric` variables. We have to convert these columns to `factor`. 
 
-The `factor` takes as arguments:
+---
+
+## Converting data
+
+Many discrete variables are stored as `numeric` variables. We have to convert these columns to factors. 
+
+ To do the conversion, we use the `factor` function. The `factor` takes as arguments:
 
 - the dicrete data in the first argument
 - `level` is current coding the discrete data. This is an optional argument. 
 - `label` is the encoding that you would like to change to discrete data. This is an optional argument. Use this argument if you would to change the labeling of the discrete data. 
 
-```{r}
-colon_subset_recurrence$age.ds <- factor(colon_subset_recurrence$age.ds, 
-                                         levels= c("0","1"),
-                                         labels=c("<60",">60"))
-```
+---
 
+## Converting data
+
+
+\tiny 
 ```{r}
 colon_subset_recurrence$node4 <- factor(colon_subset_recurrence$node4, 
                                            levels= c("0","1"), 
                                            labels=c("<4",">4"))
-```
 
-```{r}
 colon_subset_recurrence$sex <- factor(colon_subset_recurrence$sex,
                                       levels= c("0","1"), labels=c("F","M"))
-```
 
-```{r}
 colon_subset_recurrence$obstruct <- factor(colon_subset_recurrence$obstruct,
                                            levels= c("0","1"),
                                            labels=c("no obstruct","obstruct"))
@@ -146,9 +201,7 @@ colon_subset_recurrence$adhere <- factor(colon_subset_recurrence$adhere,
 colon_subset_recurrence$perfor <- factor(colon_subset_recurrence$perfor, 
                                          levels= c("0","1"), 
                                          labels=c("no perfor","perfor"))
-```
 
-```{r}
 colon_subset_recurrence$differ <- factor(colon_subset_recurrence$differ,
                                          levels= c("1","2","3"),
                                          labels=c("well","mod","poor"))
@@ -161,14 +214,25 @@ colon_subset_recurrence$surg <- factor(colon_subset_recurrence$surg,
 ```
 
 
+\normalsize
+
+---
+
+## Converting data
+
+
 Now, let's take a look at the data.
-```{r}
+\tiny
+```{r,out.width='30%'}
 head(colon_subset_recurrence)
 ```
+\normalsize
+
+---
 
 ## Surv Object
 
-The `Surv` function takes as input the time and censoring status (0 or 1) of a data point. It returns a object that packages together time and censoring status.
+In order to survival model functions in R, time and censoring status data must be packaged together using `Surv` function. The `Surv` function takes as input the time and censoring status (0 or 1) of a data point. It returns a object that packages together time and censoring status. 
 
 ```{r}
 surv <-with(colon_subset_recurrence, Surv(time,status))
@@ -177,7 +241,7 @@ head(surv)
 
 The `+` at the end of the time indicates that the data point was censored.
 
-\newpage 
+---
 
 # Kalpan-Meier Estimator
 
@@ -188,6 +252,7 @@ First, let $t_i$ be the $i$th recorded time in the data. That is, $t_1$ is the $
  $$ \hat{S}(t) = \prod_{\text{for }i:\, t_i \leq t}\left(1-\frac{d_i}{n_i}\right) $$
  where $d_i$ is the number of persons that "died" after time $t_i$ and $n_i$ is the number of uncensored persons that have lived up to $t_i$.
  
+---
 
 ##  Kalpan-Meier Estimator for the entire data
 
@@ -197,135 +262,273 @@ To fit $\hat{S}(t) = \prod_{\text{for }i:\, t_i \leq t} 1-\frac{d_i}{n_i}$ to th
 km_fit <- survfit(surv~1, data=colon_subset_recurrence)
 ```
 
-We can return a summary of the  $\hat{S}(t)$ at certain time points. `summary(km_fit)` will return a summary `km_fit` for all time points in the data. Since the data set is large, I do not run the command, `summary(km_fit)`. However, you are free to do this on your own.
+---
 
-```{r}
+##  Kalpan-Meier Estimator for the entire data
+
+We can return a summary of the  $\hat{S}(t)$ at certain time points. `summary(km_fit)` will return a summary `km_fit` for all time points in the data.
+
+\tiny
+```{r,out.width='30%'}
 summary(km_fit,times=c(1,10,20,30,40,50))
 ```
+\normalsize
 
-There is a convience function `ggsurvplot` that generates a plot for a `survfit` object. `conf.int = TRUE` shows the confidence interval around the estimate. `risk.table = TRUE` shows a tabulation of risk below $\hat{S}(t)$.
+---
 
-```{r}
+##  Kalpan-Meier Estimator for the entire data
+
+There is a convience function `ggsurvplot` that generates a plot for a `survfit` object. 
+
+ggsurvplot takes as argument:
+- the first argument is the `survfit` object
+- `data` is the dataframe used to learn the `survfit` object
+- `conf.int = TRUE` -- this shows the confidence interval around the estimate. 
+- `risk.table = TRUE` -- this shows a tabulation of risk below $\hat{S}(t)$.
+
+---
+
+##  Kalpan-Meier Estimator for the entire data
+
+\tiny
+```{r,out.width='70%'}
 ggsurvplot(km_fit, data = colon_subset_recurrence,
            conf.int = TRUE,risk.table = TRUE,
            ggtheme = theme_bw(),
            risk.table.col = "strata")
 ```
+\normalsize
+
+---
 
 ##  Kalpan-Meier Estimator for the data divided into obstruct and no obstruct
 
-`colon_subset_recurrence` can be divided two data sets by the `obstruct` column. Those patients whose colons are obstructed by the tumour and those whose colons aren't. We can fit to each data partition to a Kalpan-Meier Estimator
+`colon_subset_recurrence` can be divided two data sets by the `obstruct` column. Those patients whose colons are obstructed by the tumour and those whose colons aren't. 
+
+We can fit to each data partition to a Kalpan-Meier Estimator:
 $$\hat{S}_{\text{obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{obstruct}_i = \text{obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
-$$\hat{S}_{\text{no obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{obstruct}_i = \text{no obstruct}}} \left(1-\frac{d_i}{n_i}\right) $$
-to the entire data. To do this, we use the command below.
+$$\hat{S}_{\text{no obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{obstruct}_i = \text{no obstruct}}} \left(1-\frac{d_i}{n_i}\right).$$
 
-```{r}
-km_fit <- survfit(surv~obstruct, data=colon_subset_recurrence)
-```
+---
 
-```{r}
+##  Kalpan-Meier Estimator for the data divided into obstruct and no obstruct
+
+\tiny
+
+```{r,out.width='50%'}
+km_fit <- survfit(surv~obstruct, 
+                  data=colon_subset_recurrence)
 summary(km_fit,times=c(1,10,20,30,40,50))
 ```
+\normalsize
+
+---
 
 
+##  Kalpan-Meier Estimator for the data divided into obstruct and no obstruct
 
-
-```{r}
+\tiny
+```{r,out.width='80%'}
 ggsurvplot(km_fit, data = colon_subset_recurrence, 
            pval = TRUE,conf.int = TRUE,
            risk.table = TRUE, ggtheme = theme_bw(),
            risk.table.col = "strata")
 ```
 
-The p-value in the plot comes the log-rank hypothesis test which allows us to compare a set of Kaplan-Meier estimators. The null hypothesis is that there is no significant different between the Kaplan-Meier estimators. Since $p < 0.05$, we reject the null hypothesis. 
+\normalsize
 
-We also do the log-rank hypothesis test using the `survdiff` function.
 
-```{r}
-p_value <- survdiff(surv~obstruct, data=colon_subset_recurrence)
+---
+
+
+##  Kalpan-Meier Estimator for the data divided into obstruct and no obstruct
+
+
+The p-value in the plot comes the log-rank hypothesis test which allows us to compare a set of Kaplan-Meier estimators. 
+
+The null hypothesis is that there is no significant different between the Kaplan-Meier estimators. 
+
+Since $p < 0.05$, we reject the null hypothesis. 
+
+---
+
+
+##  Kalpan-Meier Estimator for the data divided into obstruct and no obstruct
+
+
+We can also do the log-rank hypothesis test using the `survdiff` function.
+
+
+\tiny
+```{r,out.width='50%'}
+p_value <- survdiff(surv~obstruct, 
+                    data=colon_subset_recurrence)
 print(p_value)
-
 ```
+
+\normalsize
+
+
+---
 
 
 ##  Kalpan-Meier Estimator for the data divided into adhere and no adhere
 
 `colon_subset_recurrence` can be divided two data sets by the `adhere` column. Those patients whose colons are obstructed by the tumour and those whose colons aren't. We can fit to each data partition to a Kalpan-Meier Estimator
 $$\hat{S}_{\text{adhere}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{adhere}}} \left (1-\frac{d_i}{n_i}\right)$$
-$$\hat{S}_{\text{no adhere}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{no adhere}}} \left(1-\frac{d_i}{n_i}\right) $$
-to the entire data. To do this, we use the command below.
 
-```{r}
+$$\hat{S}_{\text{no adhere}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{no adhere}}} \left(1-\frac{d_i}{n_i}\right) .$$
+
+
+---
+
+
+
+##  Kalpan-Meier Estimator for the data divided into adhere and no adhere
+
+To do the fit, we use the command below.
+
+\tiny
+```{r,out.width='30%'}
 km_fit <- survfit(surv~adhere, data=colon_subset_recurrence)
-```
-
-```{r}
 summary(km_fit,times=c(1,10,20,30,40,50))
 ```
+\normalsize
 
-```{r}
+
+---
+
+
+##  Kalpan-Meier Estimator for the data divided into adhere and no adhere
+
+
+\tiny
+
+```{r,out.width='70%'}
 ggsurvplot(km_fit, data = colon_subset_recurrence, 
            pval = TRUE,conf.int = TRUE,
            risk.table = TRUE, ggtheme = theme_bw(),
            risk.table.col = "strata")
 ```
 
-```{r}
+\normalsize
+
+
+---
+
+##  Kalpan-Meier Estimator for the data divided into adhere and no adhere
+
+\tiny
+
+```{r,out.width='50%'}
 survdiff(surv~adhere,data=colon_subset_recurrence)
 ```
 
+\normalsize
+
+
+---
+
+
 ##  Kalpan-Meier Estimator for the data divided into (adhere, obstruct), (adhere, no obstruct), (no adhere, obstruct) and (no adhere, no obstruct) 
 
-`colon_subset_recurrence` can be divided in any amount by the explanatory variables Let's consider breaking up the data based on a patient's obstruction and adherence status. We can fit to each data partition to a Kalpan-Meier Estimator
-$$\hat{S}_{\text{adhere}, \text{obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{adhere}\\ \text{obstruct}_i = \text{ obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
-$$\hat{S}_{\text{no adhere}, \text{obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{no adhere}\\ \text{obstruct}_i = \text{ obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
+\tiny
 
-$$\hat{S}_{\text{adhere}, \text{no obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{adhere}\\ \text{obstruct}_i = \text{no obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
-$$\hat{S}_{\text{no adhere}, \text{no obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t \\ \text{adher}_i = \text{no adhere}\\ \text{obstruct}_i = \text{no obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
+`colon_subset_recurrence` can be divided in any amount by the explanatory variables Let's consider breaking up the data based on a patient's obstruction and adherence status.
 
-to the entire data. To do this, we use the command below.
+We can fit to each data partition to a Kalpan-Meier Estimator
+$$\hat{S}_{\text{adhere}, \text{obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{adhere}\\ \text{obstruct}_i = \text{ obstruct}}} \left (1-\frac{d_i}{n_i}\right), \, \, \, \, \, \, \, \, \hat{S}_{\text{no adhere}, \text{obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{no adhere}\\ \text{obstruct}_i = \text{ obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
+$$\hat{S}_{\text{adhere}, \text{no obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{adhere}\\ \text{obstruct}_i = \text{no obstruct}}} \left (1-\frac{d_i}{n_i}\right), \, \, \, \, \,  \, \, \, \, \hat{S}_{\text{no adhere}, \text{no obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t \\ \text{adher}_i = \text{no adhere}\\ \text{obstruct}_i = \text{no obstruct}}} \left (1-\frac{d_i}{n_i}\right).$$
 
-```{r}
+
+\normalsize
+
+---
+
+##  Kalpan-Meier Estimator for the data divided into (adhere, obstruct), (adhere, no obstruct), (no adhere, obstruct) and (no adhere, no obstruct) 
+
+To do this fit, we use the command below.
+
+\tiny
+```{r,out.width='30%'}
 km_fit <- survfit(surv~adhere + obstruct, data=colon_subset_recurrence)
+summary(km_fit,times=c(10,30,50))
 ```
+\normalsize
 
-```{r}
-summary(km_fit,times=c(1,10,20,30,40,50))
-```
+---
+
+##  Kalpan-Meier Estimator for the data divided into (adhere, obstruct), (adhere, no obstruct), (no adhere, obstruct) and (no adhere, no obstruct) 
 
 
-```{r}
+\tiny
+```{r,out.width='70%'}
 ggsurvplot(km_fit, data = colon_subset_recurrence, 
            pval = TRUE,conf.int = TRUE,
            risk.table = TRUE, ggtheme = theme_bw(),
            risk.table.col = "strata")
 ```
+\normalsize
 
 
-```{r}
+---
+
+
+##  Kalpan-Meier Estimator for the data divided into (adhere, obstruct), (adhere, no obstruct), (no adhere, obstruct) and (no adhere, no obstruct) 
+
+
+\tiny
+```{r,out.width='30%'}
 survdiff(surv~adhere + obstruct,data=colon_subset_recurrence)
 ```
+\normalsize
 
-\newpage
 
-# Cox Proportional Hazard
+---
+
+
+# Kaplan-Meier estimator
 
 In the limit of large data, the Kaplan-Meier estimator converges to true survival function. However, the Kaplan-Meier has two disadvantages:
 
 - it cannot effectively accomodate continuous data
 - it is non-parameteric -- this means that given a data point, we cannot predict their life trajectory from data. This will be seen more clearly later in this section.
 
-Rather than estimating survival function at each time interval,  the *Cox Proportional Hazard* assumes that hazard function is an exponentiated linear function of explanatory variables. That is,
+---
+
+# Cox Proportional Hazard
+
+
+*Cox Proportional Hazard* model is alternative to the Kaplan-Meier estimator.
+
+Rather than estimating survival function at each time interval, the *Cox Proportional Hazard* assumes that hazard function is an exponentiated linear function of explanatory variables. That is,
 
 $$\lambda_{i}(t) = \lambda_0(t)\exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right).$$
-$\lambda_0(t)$ is called the baseline function. $\lambda(t) = \lambda_0(t)$ when $X_{1i} = X_{2i} = \cdots = X_{ni} = 0$.
+
+where $\lambda_{i}(t)$ is the hazard function of the $i$th data point and $\lambda_0(t)$ is called the baseline function. $\lambda(t) = \lambda_0(t)$ when $X_{1i} = X_{2i} = \cdots = X_{ni} = 0$
+
+---
 
 
-The Cox Proportional Hazard models the effects of the covariates on the baseline function. It assumes that the ratio of hazards are independent of time. The baseline function is generally unknown. However, the effects of the covariates can still be determined regardless of the baseline function. The $\beta_i$'s is calculated using *partial maximum likelihood.* Avoiding the estimation of $\lambda_0(t)$ prevents accumulation of errors in a unknown function. 
+# Cox Proportional Hazard
+
+
+$$\lambda_{i}(t) = \lambda_0(t)\exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right).$$
+
+
+The Cox Proportional Hazard models the effects of the covariates on the baseline function. It assumes that the ratio of hazards are independent of time. The baseline function is generally unknown. 
+
+However, the effects of the covariates can still be determined regardless of the baseline function. The $\beta_i$'s is calculated using *partial maximum likelihood.* Avoiding the estimation of $\lambda_0(t)$ prevents accumulation of errors in a unknown function. 
+
+---
+
+# Cox Proportional Hazard
 
 Note that the Cox Proportional Hazard does not solve all the problems of the Kaplan-Meier estimator.  Cox Proportional Hazard has one (or 1/2) disadvantage:
 
 - it is semi-parametric. Given a data point, we can estimate the effect of a covariate on the baseline function. However, we cannot predict the life trajectory of data point unless we know $\lambda_0(t)$.
+
+---
 
 ## Cox Proportional Hazard for $X_1 = \text{surg}$
 
@@ -335,6 +538,9 @@ $$\lambda_{i}(t) = \lambda_0(t)\exp\left(\beta_1 X_{1i}\right).$$
 where 
 $$X_{1i} = \begin{cases}  1 & \text{if surgery time of ith data point is } \text{long}\\ 0 & \text{otherwise}\\\end{cases}.$$
 
+---
+
+
 ### Learning Cox Proportional Hazard model
 We fit the Cox Proportional Hazard model accordingly.
 ```{r}
@@ -342,23 +548,54 @@ cox <- coxph(surv ~  surg,
              data=colon_subset_recurrence)
 ```
 
+---
 
-```{r}
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$
+
+
+\tiny
+```{r,out.width='50%'}
 summary(cox)
 ```
+\normalsize
+
+
+---
+
+
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$
+
 
 ```{r}
 coef(cox)
 ```
 
+---
 
-```{r}
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$
+
+\tiny
+```{r,out.width='70%'}
 ggforest(cox, data = colon_subset_recurrence)
 ```
+\normalsize
 
+
+---
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$
 ### Testing Proportionality Assumption
 
 The Cox proportionality hazard model assumes that ratio of the hazards are constant over time.  If ratio of the hazards are constant over time, then covariates and their effects must also be constant over time. If this assumption is violated, then one might get strange results (such as the crossing of Kaplan-Meier curves). 
+
+---
+
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$
+### Testing Proportionality Assumption
 
 To test for proportionality hazard assumption, we use the `cox.zph` function. `cox.zph` takes a `coxph` model as input and returns a p-value to determine whether the proportionality hazard assumption was voilated for each covariate. `cox.zph` tests the null hypothesis that there are no time dependent relationships in thecovariates and their effects.
 
@@ -366,14 +603,21 @@ To test for proportionality hazard assumption, we use the `cox.zph` function. `c
 test.ph <- cox.zph(cox)
 test.ph
 ```
+
 Since the p value is greater than 0.05, we fail to reject the null hypothesis
 
 
+---
+
 ### Model Selection
 
-```{r}
+\tiny
+```{r,out.width='50%'}
 anova(cox)
 ```
+\normalsize
+
+---
 
 ## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$
 
@@ -384,7 +628,10 @@ where
 $$ X_{1i} = \begin{cases}  1 & \text{if surgery time of i th data point is } \text{long}\\ 0 & \text{otherwise}\\\end{cases},$$
 $$ X_{2i} = \begin{cases} 1 & \text{if the i th data point has adherence to other organs}\\ 0 & \text{otherwise}\end{cases}.$$
 
+---
 
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$
 ### Learning Cox Proportional Hazard model
 
 
@@ -394,18 +641,32 @@ cox <- coxph(surv ~  surg + adhere,
              data=colon_subset_recurrence)
 ```
 
-```{r}
+---
+
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$
+### Learning Cox Proportional Hazard model
+
+\tiny
+```{r,out.width='50%'}
 summary(cox)
 ```
+\normalsize
 
-```{r}
-coef(cox)
-```
+---
 
-```{r}
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$
+### Learning Cox Proportional Hazard model
+
+\tiny
+```{r,out.width='70%',message=FALSE,warning=FALSE}
 ggforest(cox, data = colon_subset_recurrence)
 ```
+\normalsize
 
+---
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$
 ### Testing Proportionality Assumption
 
 
@@ -416,12 +677,18 @@ test.ph
 
 Since the p value is greater than 0.05, we fail to reject the null hypothesis
 
+
+---
+
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$
 ### Model Selection
 
 ```{r}
 anova(cox)
 ```
 
+---
 
 ## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$, $X_3 = \text{nodes}$
 
@@ -434,27 +701,48 @@ $$ X_{2i} = \begin{cases} 1 & \text{if the i th data point has adherence to othe
 
 and $X_{3i}$ is number of nodes of the i th data point.
 
+---
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$, $X_3 = \text{nodes}$
+
 ### Learning Cox Proportional Hazard model
 
 We fit the Cox Proportional Hazard model accordingly.
+
+
 ```{r}
 cox <- coxph(surv ~ surg + adhere + nodes, 
              data=colon_subset_recurrence)
 ```
 
-```{r}
+---
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$, $X_3 = \text{nodes}$
+### Learning Cox Proportional Hazard model
+
+\tiny
+```{r,out.width='70%'}
 summary(cox)
 ```
+\normalsize
 
-```{r}
-coef(cox)
-```
+---
 
-```{r}
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$, $X_3 = \text{nodes}$
+### Learning Cox Proportional Hazard model
+
+\tiny
+```{r,out.width='70%',message=FALSE,warning=FALSE}
 ggforest(cox, data = colon_subset_recurrence)
 ```
+\normalsize
+
+---
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$, $X_3 = \text{nodes}$
 
 ### Testing Proportionality Assumption
+
 
 ```{r}
 test.ph <- cox.zph(cox)
@@ -464,11 +752,17 @@ test.ph
 Since the p value is greater than 0.05, we fail to reject the null hypothesis
 
 
+---
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$, $X_3 = \text{nodes}$
+
 ### Model Selection
 
 ```{r}
 anova(cox)
 ```
+
+---
 
 ## Estimating Survival Curve
 
@@ -477,12 +771,22 @@ It is possible to estimate the survival curve for the Cox Proportional Model as 
 $$\lambda_0(t_i) \approx \frac{d_i}{\sum_{s \in R_i} \exp\left(\beta_1 X_{1s} + \cdots + \beta_n X_{ns}\right)} $$
 where $d_i$ is the number of deaths in at time $t_i$, $R_i$ is set of persons alive after $t_i$ and $X_{ij}$ is the $i$th explanatory variable of the $j$th person.
 
-Now let's create some data point. This data point will have the `surg` set to `short`, `adhere` set to `no adhere`, `nodes` set to `5` and `extent` set to `serosa`.
+---
+
+## Estimating Survival Curve
+
+Now let's create some data point. This data point will have the `surg` set to `short`, `adhere` set to `no adhere`, `nodes` set to `5`.
+
 
 ```{r}
 subject_one <- data.frame(surg = factor('short'),
-                          adhere = factor('adhere'), nodes = 5)
+                          adhere = factor('adhere'),
+                          nodes = 5)
 ```
+
+---
+
+## Estimating Survival Curve
 
 Using the `survfit` function, we can generate an object which will be used for plotting.  `survfit` takes as argument:
 
@@ -496,24 +800,39 @@ prediction_one <- survfit(cox, subject_one,
                           data = colon_subset_recurrence)
 ```
 
+---
+
+## Estimating Survival Curve
+
 We then use the `ggsurvplot` function to plot the estimate of the survival curve from `survfit` fit object.
 
-```{r}
-ggsurvplot(prediction_one, ylab = "Probability of no recurrence ",
+\tiny
+```{r,out.width='70%'}
+ggsurvplot(prediction_one,
+           ylab = "Probability of no recurrence ",
            conf.int = TRUE,
            ggtheme = theme_bw())
 ```
+\normalsize
+
+---
+
+## Estimating Survival Curve
+
 
 We can also use the `ggsurvplot` function to plot the estimate of the cumulative hazard curve from `survfit` fit object
 
-```{r}
+\tiny
+```{r,out.width='80%'}
 ggsurvplot(prediction_one, fun="cumhaz",
            conf.int = TRUE,risk.table = TRUE,
            ggtheme = theme_bw(),
            risk.table.col = "strata")
 ```
+\normalsize
 
-\newpage
+---
+
 
 # Accelerated failure time models
 
@@ -526,10 +845,25 @@ where $\varepsilon$ is a random error term that follows a distribution.
 This is called an `accelerated` failure model since covariates can scale the base time distribution, $T_0$, by their effects.
 
 
-$$ T_i =  T_0\exp(\beta_1 X_{1i} + \cdots + \beta_n X_{ni})$$
+$$ T_i =  T_{0i}\exp(\beta_1 X_{1i} + \cdots + \beta_n X_{ni})$$
  where $T_0 = \exp(\varepsilon_i)$.
  
-There is difference between proportional hazard models (PH) and accelerated failure time models (AFT). The effect of the covariates in PH models act multiplicately on the base hazard. However, in AFT models, these effects act multiplicately on the base time. Despite this difference, it is possible that AFT models are also PH models.
+---
+
+# Accelerated failure time models vs. Proportional hazard
+
+
+There is difference between proportional hazard models (PH) and accelerated failure time models (AFT).
+
+The effect of the covariates in PH models act multiplicately on the base hazard.
+
+However, in AFT models, these effects act multiplicately on the base time.
+
+Despite this difference, it is possible that AFT models are also PH models.
+
+---
+
+# Accelerated failure time models
 
 
 We use the function, `survreg`, to fit accelerated failure time models. The argument, `dist`, specifies the distribution which implies the form of $\lambda_0(t)$. We will be considering:
@@ -538,8 +872,13 @@ We use the function, `survreg`, to fit accelerated failure time models. The argu
 - weibull models, `dist="weibull"`
 - lognormal models, `dist="lognormal"`
 
-These are fully parameteric model and are thus a suitable alterative Kaplan-Meier estimators and Cox Proportional Hazard models. However, AFT assume the function form $T_0$ and, thus, the baseline hazard and the baseline survival functions. Incorrect assumptions introduce errors in our modeling.
+These are fully parameteric model and are thus a suitable alterative Kaplan-Meier estimators and Cox Proportional Hazard models.
 
+However, AFT assume the distribution of $T_{0i}$. This assumption determines functional form the baseline hazard and the baseline survival functions. Incorrect assumptions introduce errors in our modeling.
+
+---
+
+# Accelerated failure time models
 ## Exponential models
 
 Exponential accelerated failure time models are also proportional hazard models. Exponential accelerated failure time models assume that $T_0$ follows a exponential distribution with parameter $\lambda$.
@@ -552,22 +891,47 @@ $$\text{and  } S_i(t) = \exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right
 
 As proportional hazard model, exponential accelerated failure time models assumes that the baseline hazard is constant, $\lambda_0(t) = \lambda$. 
 
+---
 
+
+# Accelerated failure time models
+## Exponential models
 ###  Learning Exponential models
 
 `survreg` learns the parameter value, $\lambda$, and the regression coefficients. As an example, we will be consider the model: `surv ~ 1 + surg + adhere + nodes`.
 
 ```{r}
 survregExp <- survreg(surv ~ 1 + surg + adhere + nodes,
-                            dist="exponential",data=colon_subset_recurrence)
-summary(survregExp)
+                            dist="exponential",
+                      data=colon_subset_recurrence)
 ```
 
-Therefore, $\lambda = \exp(8.45944)$.
 
+---
+
+# Accelerated failure time models
+## Exponential models
+###  Learning Exponential models
+
+\tiny
+```{r,out.width='50%'}
+summary(survregExp)
+```
+\normalsize
+
+To get the parameter for the distributions, we have that $\lambda = \exp(-\text{Intercept})= \exp(-8.45944)$.
+
+
+
+---
+
+
+# Accelerated failure time models
+## Exponential models
 ### Estimating Survival Curve
 
-```{r}
+\tiny
+```{r,out.width='60%'}
 subject_two = list(surg = factor('short'), adhere = factor('no adhere'), nodes = 5)
 
 plot(predict(survregExp, newdata=subject_two,
@@ -575,20 +939,29 @@ plot(predict(survregExp, newdata=subject_two,
      seq(.99,.01,by=-.01), col="red",type='l',xlab='time',
      ylab='Survival probability',main='Exponential AFT Model')
 ```
+\normalsize
+
+
+
+---
+
+
+
+# Accelerated failure time models
 ## Weibull models
 
 Weibull accelerated failure time models are also proportional hazard models. Weibull accelerated failure time models assume that $T_0$ follows a Weibull distribution with parameters, $\lambda$ and $\gamma$. 
 
 From our definitions of terms and with some probability theory (not covered), the hazard and survival function of a Weibull AFT models are
-
 $$\lambda_i(t) = \lambda \gamma t^{\gamma -1} \exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right).$$
-
 $$\text{and  } S_i(t) = \exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right)S_{0}(t), \, \, S_{0}(t) = \exp(-(\lambda t)^{\gamma}).$$
 
 As proportional hazard model, Weibull accelerated failure time models assumes that the baseline hazard is constant, $\lambda \gamma t^{\gamma -1}$. One can see that exponential accelerated failure time models are a special case of Weibull accelerated failure time models with $\gamma = 1$.
 
+---
 
-
+# Accelerated failure time models
+## Weibull models
 ###  Learning Weibull models
 
 `survreg` learns the parameter value, $\lambda$ and $\gamma$,and the regression coefficients.
@@ -597,19 +970,45 @@ As an example, we will be consider the model: `surv ~ 1 + surg + adhere + nodes`
 
 ```{r}
 survregWeibull = survreg(surv ~ 1 + surg + adhere + nodes,
-                 dist="weibull",data=colon_subset_recurrence)
-summary(survregWeibull)
+                 dist="weibull",
+                 data=colon_subset_recurrence)
 ```
 
-Therefore,
+---
 
-$$\gamma = \exp(0.3432)$$
+# Accelerated failure time models
+## Weibull models
+###  Learning Weibull models 
 
-$$\lambda = \exp(8.7993\times \gamma)$$
+\tiny
+```{r,out.width='20%'}
+summary(survregWeibull)
+```
+\normalsize
 
+
+---
+
+
+# Accelerated failure time models
+## Weibull models
+###  Learning Weibull models 
+
+To get the parameters from Weibull distributions, we use the formulas
+
+$$\gamma = \exp(-\log(\text{scale}))= \exp(-0.3432)$$
+$$\lambda = \exp(- \text{intercept}\times \gamma) =\exp(- 8.7993 \times \gamma)  $$
+
+
+---
+
+
+# Accelerated failure time models
+## Weibull models
 ### Estimating Survival Curve
 
-```{r}
+\tiny
+```{r,out.width='50%'}
 subject_two = list(surg = factor('short'), 
                    adhere = factor('no adhere'), 
                    nodes = 5)
@@ -621,29 +1020,58 @@ plot(predict(survregWeibull, newdata=subject_two,
      ylab='Survival probability',main='Weibull AFT Model')
 
 ```
+\normalsize
 
-
-### Log-normal models
+---
+# Accelerated failure time models
+## Log-normal models
 
 Log-normal accelerated failure time models assume that $T_0$ follows a log normal distribution with a scale parameter. Log-normal accelerated failure time models are not proportional hazard models.
 
 The hazard and survival function of a log-normal AFT models are a bit complicated so they will not be shown here.
 
+---
+
+
+# Accelerated failure time models
+## Log-normal models
 ###  Learning Log-normal models
 
 `survreg` learns the parameter value, $\lambda$ and $\gamma$,and the regression coefficients.
 
 As an example, we will be consider the model: `surv ~ 1 + surg + adhere + nodes` for all the accelerated time models.
 
+\small
 ```{r}
 survregLogNormal = survreg(surv ~ 1 + surg + adhere + nodes,
                  dist="lognormal",data=colon_subset_recurrence)
+```
+\normalsize
+
+
+---
+
+
+# Accelerated failure time models
+## Log-normal models
+###  Learning Log-normal models
+
+
+\tiny
+```{r,out.width='20%'}
 summary(survregLogNormal)
 ```
+\normalsize
 
+---
+
+
+# Accelerated failure time models
+## Log-normal models
 ### Estimating Survival Curve
 
-```{r}
+\tiny
+```{r,out.width='60%'}
 subject_two = list(surg = factor('short'), 
                    adhere = factor('no adhere'), 
                    nodes = 5)
@@ -654,3 +1082,6 @@ plot(predict(survregLogNormal, newdata=subject_two,
      ylab='Survival probability',main='Log Normal AFT Model')
 
 ```
+
+\normalsize
+

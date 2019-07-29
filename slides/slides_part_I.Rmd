@@ -1,0 +1,531 @@
+---
+title: "Part I: Exploratory Data Analysis, Linear Regression, ANOVA"
+output:
+  beamer_presentation 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(dev = 'pdf')
+```
+
+
+# Load Packages 
+
+First, we must load the packages that will be used in the first part of this workshop.
+
+
+```{r, message=FALSE, warning=FALSE }
+library(pastecs, quietly = TRUE)
+library(lm.beta,  quietly = TRUE)
+library(lmtest,  quietly = TRUE)
+library(foreign,  quietly = TRUE)
+library(lattice,  quietly = TRUE)
+library(lme4,  quietly = TRUE)
+library(nlme,  quietly = TRUE)
+library(survival,  quietly = TRUE)
+library(dplyr,  quietly = TRUE)
+library(ggfortify,  quietly = TRUE)
+library(survminer,  quietly = TRUE)
+library(rms,  quietly = TRUE)
+```
+---
+
+# Exploratory Data Analysis
+## Basic Statistical Analysis 
+### Data set description
+
+In this section, we will be using the iris data set. This data set contains measurement data of the flower of certain plant species. The data set has five variables:
+
+- *Sepal.Length* - measurements of Sepal length
+- *Sepal.Width* - measurements of Sepal width
+- *Petal.Length* - measurements of Petal length
+- *Petal.Width* - measurements of Petal width
+- *Species* - species of the plant
+
+```{r}
+data = iris
+```
+---
+
+
+## Basic Statistical Analysis 
+### Univariate descriptive statistics
+
+The function, `stat.desc`, can be used to do a statistical analysis of data. It returns the mean, median, maximum, minimum, etc of a data set.
+
+\tiny
+```{r}
+stat.desc(data$Sepal.Width)
+```
+\normalsize
+
+---
+
+## Basic Statistical Analysis 
+### Descriptive statistics by groups 
+
+Using `tapply`, we compute the same descriptive statistics above but grouped species with the same sepal width. `tapply` takes
+
+- *first argument*: the input data to which we will apply the statistical function 
+- *second argument*: the grouping data which tells the statistical function how to group the input data
+- *third argument*: the statistical function.
+
+We will be considering the statistical functions: `mean`,`sd` and `length`.
+
+
+---
+
+
+## Basic Statistical Analysis 
+### Descriptive statistics by groups 
+
+We will be considering the statistical functions: `mean`,`sd` and `length`.
+
+\tiny
+```{r}
+mean <- tapply(data$Sepal.Length, data$Sepal.Width, mean)
+standard_deviation <- tapply(data$Sepal.Length, data$Sepal.Width, sd)
+number_of_observations <- tapply(data$Sepal.Length, data$Sepal.Width, length)
+head(round(cbind(mean, standard_deviation, number_of_observations), digits = 6))
+```
+\normalsize
+
+
+---
+
+## Basic Data Visualization
+### Histogram
+
+It is important get an idea of the "structure" of your data. To do this, we can use histograms. We use the `hist` function to plot a distribution of sepal width.
+
+```{r,out.width = '50%'}
+hist(data$Sepal.Width,
+     xlab='Sepal Width',ylab='Count',
+     main= 'Histogram plot of sepal length vs sepal width')
+```
+
+
+---
+
+### Scatter Plot
+We use the `plot` function to create a scatter plot of sepal length vs sepal width.
+```{r,out.width = '50%'}
+plot(data$Sepal.Length, data$Sepal.Width,
+     xlab='Sepal length', ylab='Sepal Width',
+     main= 'Scatter plot of sepal length vs sepal width')
+```
+
+---
+
+## Basic Data Visualization
+### Stacking plots (without ggplot2)
+
+We also differentiate the scatter plot above by species. We plot each species separately. 
+
+First, we call `plot` to create a canvas with an set of points associated with Setosa. If we were to call `plot` again, this would clear the previous plot.
+
+--- 
+
+## Basic Data Visualization
+### Stacking plots (without ggplot2)
+
+Rather, we call `points` to add scatter plots to existing plot. `points` does not clear the previous plot.
+ 
+\tiny
+```{r,out.width = '40%'}
+plot(data[data$Species == "setosa", ]$Sepal.Length, 
+     data[data$Species == "setosa", ]$Sepal.Width, 
+     xlab = 'Sepal Length',  ylab= 'Sepal Width',
+     xlim = range(as.matrix(data$Sepal.Length)), 
+     ylim = range(as.matrix(data$Sepal.Width)),
+     main= 'Scatter plot of sepal length vs sepal width')
+
+points(data[data$Species == "versicolor", ]$Sepal.Length,
+       data[data$Species == "versicolor", ]$Sepal.Width,
+       col = 'red')
+
+points(data[data$Species == "virginica", ]$Sepal.Length,
+       data[data$Species == "virginica", ]$Sepal.Width, col = 'blue')
+```
+\normalsize
+
+
+---
+
+
+## Basic Data Visualization
+### Scatter plot matrix
+
+It is quite cumbersome to call to `plot` multiple times to create scatter plots for various pairs of explanatory variables. 
+
+There exists a convience function, `pairs`, that will create a matrix of scatter plots for all possible explanatory variable combination.
+
+We give the `pairs` the first four columns of `data`. It will create a scatter plot matrix for sepal length, sepal width, petal length and petal width.
+
+
+---
+
+### Scatter plot matrix
+
+```{r,out.width = '70%'}
+pairs(data[,c(1:4)])
+```
+
+
+---
+
+
+## Basic Data Visualization
+### Correlation matrix
+
+From the scatter plot matrix above, we can see the qualitative correlation patterns between explanatory variables. We can also calculate these correlations explicitly and as a matrix using the `cor` function.
+\tiny
+```{r,out.width = '70%'}
+cor(data[,c(1:4)])
+```
+
+\normalsize
+
+---
+
+
+# Linear regression
+
+Given a response variable, $y$, explanatory variables, $X_i$, and assuming that
+
+$$ y_i = \beta_0 +\beta_1 X_{1i} + \beta_2 X_{2i} + \cdots + \beta_n X_{ni} +\varepsilon$$
+
+where $\varepsilon$ is a noise term, linear regression attempts the find the coefficients $\beta_i$ that makes $\varepsilon$ as small as possible.
+
+The formula above assumes that response variable is a linear function explanatory variables. The noise term is added to account for the fact that most data is noisy and will not perfectly fit its 'true' function. 
+
+Linear regression also assumes that the noise is normally distributed with zero mean. 
+
+
+---
+
+# Linear regression
+
+
+If these two assumptions are violated then 
+  $$r_i = y_i - \beta_0 +\beta_1 X_{1i} + \beta_2 X_{2i} + \cdots + \beta_n X_{ni}$$
+  
+  and $\sum_{i=1}^m r_i^2$ is generally a large number. $\sum_{i=1}^m r_i^2$ is called the residual standard error.
+  
+  
+---
+
+## Linear regression syntax
+
+To regress the response variable, `Sepal.Width`, with explanatory variables, `Sepal.Length`, `Species`, `Petal.Length` and `Petal.Width`, we use the `lm` function.
+
+The first argument is `lm` is the formula. The name of the column of the response variable is written first. It is followed by a tilde, `~`. After the tilde, we write names of the explanatory variable each separated by a `+`. `1` can also be added to the formula to represent a constant term.
+
+
+---
+
+
+## Linear regression syntax
+### General Syntax: Constant Term
+
+First, I use the formula `Sepal.Width ~ 1`. This formula is equivalent to
+
+$$\text{Sepal.Width} = \beta_0 + \varepsilon.$$
+
+Note that constant term is simply the mean response variable.
+
+---
+
+## Linear regression syntax
+### General Syntax: Constant Term
+
+
+\tiny
+```{r}
+ols <- lm(Sepal.Width ~ 1, data = data)
+summary(ols)
+print(mean(data$Sepal.Width))
+```
+\normalsize
+
+---
+
+
+## Linear regression syntax
+### General Syntax: Constant Term
+
+Note that constant term is simply the mean response variable.
+
+
+\tiny
+```{r}
+coef(ols)
+print(mean(data$Sepal.Width))
+```
+\normalsize
+
+---
+
+## Linear regression syntax
+### General Syntax: Constant Term
+
+\tiny 
+
+```{r,out.width = '70%'}
+plot(data[data$Species == "setosa", ]$Sepal.Length, 
+     data[data$Species == "setosa", ]$Sepal.Width, 
+     xlab = 'Sepal Width',  ylab= 'Sepal Length',
+     xlim = range(as.matrix(data$Sepal.Length)), 
+     ylim = range(as.matrix(data$Sepal.Width)),
+     main= 'Scatter plot of sepal length vs sepal width')
+
+coefs = coef(ols)
+abline(coefs[1],0)
+```
+\normalsize
+
+---
+
+## Linear regression syntax
+### General Syntax: Explanatory Variable and Constant Term
+
+I use then formula `Sepal.Width ~ 1 + Sepal.Length`. This formula is equivalent to
+
+$$\text{Sepal.Width} = \beta_0 + \beta_1\text{Sepal.Length}+ \varepsilon$$
+
+--- 
+
+## Linear regression syntax
+### General Syntax: Explanatory Variable and Constant Term
+
+\tiny
+```{r,out.width = '60%'}
+ols <- lm(Sepal.Width ~ 1 + Sepal.Length, data = data)
+summary(ols)
+```
+\normalsize
+
+---
+
+## Linear regression syntax
+### General Syntax: Explanatory Variable and Constant Term
+
+\tiny
+```{r,out.width = '70%'}
+plot(data[data$Species == "setosa", ]$Sepal.Length, 
+     data[data$Species == "setosa", ]$Sepal.Width, 
+     xlab = 'Sepal Width',  ylab= 'Sepal Length',
+     xlim = range(as.matrix(data$Sepal.Length)), 
+     ylim = range(as.matrix(data$Sepal.Width)),
+     main= 'Scatter plot of sepal length vs sepal width')
+
+coefs = coef(ols)
+abline(coefs[1],coefs[2])
+```
+\normalsize
+
+---
+
+## Linear regression syntax
+### General Syntax: Factors
+
+I use then formula `Sepal.Width ~ 1 + Sepal.Length + as.factor(Species)`. This formula is equivalent to
+
+$$\tiny{\text{Sepal.Width} = \beta_0 + \beta_1\text{Sepal.Length} + \beta_2 I(\text{Species} = \text{Veriscolor}) + \beta_3 I(\text{Species} = \text{Virginica}) + \varepsilon}$$
+
+---
+
+## Linear regression syntax
+### General Syntax: Factors
+
+\tiny
+```{r,out.width = '50%'}
+ols <- lm(Sepal.Width ~ 1 + Sepal.Length + as.factor(Species), data = data)
+summary(ols)
+```
+\normalsize
+
+---
+
+## Linear regression syntax
+### General Syntax: Factors
+
+\tiny
+
+```{r,fig.show='hide'}
+plot(data[data$Species == "setosa", ]$Sepal.Length, 
+     data[data$Species == "setosa", ]$Sepal.Width, 
+     xlab = 'Sepal Width',  ylab= 'Sepal Length',
+     xlim = range(as.matrix(data$Sepal.Length)), 
+     ylim = range(as.matrix(data$Sepal.Width)),
+     main= 'Scatter plot of sepal length vs sepal width')
+
+points(data[data$Species == "versicolor", ]$Sepal.Length,
+       data[data$Species == "versicolor", ]$Sepal.Width,
+       col = 'yellow')
+
+points(data[data$Species == "virginica", ]$Sepal.Length,
+       data[data$Species == "virginica", ]$Sepal.Width, col = 'blue')
+coefs = coef(ols)
+abline(coefs[1],coefs[2])
+abline(coefs[3] + coefs[1],coefs[2],col='yellow')
+abline(coefs[4] +coefs[1],coefs[2],col='blue')
+```
+  
+\normalsize
+
+
+---
+
+## Linear regression syntax
+### General Syntax: Factors
+
+\tiny
+```{r,  echo=FALSE, results='hide'}
+plot(data[data$Species == "setosa", ]$Sepal.Length, 
+     data[data$Species == "setosa", ]$Sepal.Width, 
+     xlab = 'Sepal Width',  ylab= 'Sepal Length',
+     xlim = range(as.matrix(data$Sepal.Length)), 
+     ylim = range(as.matrix(data$Sepal.Width)),
+     main= 'Scatter plot of sepal length vs sepal width')
+
+points(data[data$Species == "versicolor", ]$Sepal.Length,
+       data[data$Species == "versicolor", ]$Sepal.Width,
+       col = 'yellow')
+
+points(data[data$Species == "virginica", ]$Sepal.Length,
+       data[data$Species == "virginica", ]$Sepal.Width, col = 'blue')
+coefs = coef(ols)
+abline(coefs[1],coefs[2])
+abline(coefs[3] + coefs[1],coefs[2],col='yellow')
+abline(coefs[4] +coefs[1],coefs[2],col='blue')
+```
+
+\normalsize
+
+---
+
+
+## Linear regression syntax
+### Advanced Syntax: Nonlinear Regression
+
+The `lm` function can be extended to nonlinear functions. For example, it possible include a quadratic term in our model.
+
+$$\text{Sepal.Width} = \beta_1\text{Sepal.Length} + \beta_2\text{Sepal.Length}^2  + \varepsilon$$
+
+To add a quadratic term to the model, add `I(Sepal.Length^2)` to the left side of the tilde, `~`. It is also possible to include higher order nonlinear terms, such as cubic, quintic, etc.
+
+
+---
+
+
+## Linear regression syntax
+### Advanced Syntax: Nonlinear Regression
+
+\tiny
+
+```{r,out.width= '50%'}
+ols_quadratic <- lm(Sepal.Width ~ Sepal.Length + I(Sepal.Length^2), data = data)
+summary(ols_quadratic)
+```
+
+\normalsize
+
+---
+
+
+## Linear regression syntax
+### Advanced Syntax: Interaction term
+
+It is also possible to include model interaction between explanatory variables. 
+
+$${\tiny \text{Sepal.Width} = \beta_1\text{Sepal.Length} + \beta_2\text{Petal.Length} + \beta_3 \text{Sepal.Length}\times\text{Petal.Length} + \varepsilon}$$
+$\text{Sepal.Length}\times\text{Petal.Length}$ models simple interaction between Sepal.Length and Petal.Length.
+
+---
+
+## Linear regression syntax
+### Advanced Syntax: Interaction term
+
+\tiny
+
+
+```{r,out.width= '50%'}
+ols_interaction <- lm(Sepal.Width ~ Sepal.Length + Petal.Length + Sepal.Length*Petal.Length, data = data)
+summary(ols_interaction)
+```
+
+
+\normalsize
+
+
+---
+
+## Linear regression syntax
+### Advanced Syntax: Interaction term
+
+\tiny
+
+Note that using the formula `Sepal.Width ~ Sepal.Length*Petal.Length` produces the same result as `Sepal.Length + Petal.Length + Sepal.Length*Petal.Length`.
+
+
+```{r,out.width= '50%'}
+ols_interaction <- lm(Sepal.Width ~ Sepal.Length*Petal.Length, data = data)
+summary(ols_interaction)
+```
+
+\normalsize
+
+---
+
+
+## Linear regression syntax
+### Advanced Syntax: Non-linear regression and Interaction term 
+
+
+\tiny
+
+
+```{r,out.width= '40%'}
+ols_q_i <- lm(Sepal.Width ~ Sepal.Length*as.factor(Species) + I(Sepal.Length^2), data = data)
+summary(ols_q_i)
+```
+
+\normalsize
+
+---
+
+## Obtaining the residuals
+
+Recall it is possible the measure the error between the model and response variables. Given least squares fit, 
+
+$$r_i = y_i - \beta_0 +\beta_1 X_{1i} + \beta_2 X_{2i} + \cdots + \beta_n X_{ni}$$
+r is the residual vector and $\sum_{i=1}^m r_i^2$ is the residual standard error. 
+
+
+---
+
+## Obtaining the residuals
+
+It is possible to obtain residuals from the output of `lm`
+\tiny
+```{r,out.width= '50%'}
+res <- ols$residuals
+head(data.frame(res=res))
+```
+\normalsize
+
+
+---
+## Obtaining the fitted values
+
+It is also possible to get predicted model values from the output of `lm`.
+
+```{r}
+pred <- ols$fitted.values
+head(data.frame(pred=pred,orig=data$Sepal.Width ))
+```
+
+---
+
+

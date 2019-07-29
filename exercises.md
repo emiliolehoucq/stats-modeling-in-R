@@ -74,7 +74,6 @@
 
 30. Load the colon data set from the `survival` package. Subset the data set for those whose cancer recurred. Store this subset in `colon_subset_recurrence`.
 
-
 31. Add a new column to `colon_subset_recurrence` called `time.dichotomize` which classifies if the observed time was greater or less than the median
 
 32. Build a two-contingency way table with the covariates, `time.dichotomize` and `node4`
@@ -112,9 +111,17 @@ Note: For the next exercises, recode education as a three-level factor (0 for no
 
 44. Create and plot a Kaplan-Meier estimator the entire dataset.
 
-45. Create and plot a Kaplan-Meier estimator as function of `molecular_group` the entire dataset. What does p-value tell after adding `molecular_group`?
+45. Create and plot a Kaplan-Meier estimator as function of `molecular_group` the entire dataset. 
+
+46. Using the log-rank test, how do the estimators compare to each other?
 
 ## Cox Proportional Hazard
 
 46. Create and plot the coefficients of Cox Proportional Hazard function with all gene expression covariates. Which covariates are significant?
+
+47. Is the hazard proportionality assumption violated for any covariates?
+
+48. Run `anova` on the Cox Proportional Hazard model. Interpret the output.
+
+49. Plot the estimated survival curve for a data point with covariates `CCND1 = 1011.1, CRIM1 = 28.1, DEPDC1 = 187.7, TP53 = 1762.8, IRF4 = 5693.9.`
 
