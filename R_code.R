@@ -66,8 +66,6 @@ summary(ols_interaction)
 ols_q_i <- lm(Sepal.Width ~ Sepal.Length*as.factor(Species) + I(Sepal.Length^2), data = data)
 summary(ols_q_i)
 
-## Plot the regression line
-
 ## Obtaining the residuals
 
 res <- ols$residuals
@@ -155,7 +153,6 @@ qqline(std_res)
 
 ## Residual plots
 
-par(mfrow=c(2,2))
 plot(res ~ pred, xlab="Fitted", ylab="Residual", main="Residual plot against fitted values")
 abline(h=0)
 plot(res ~ data$Sepal.Length, xlab="X", ylab="Residual", main="Residual plot against X")
@@ -164,9 +161,7 @@ abline(h=0)
 ## Test for multicollinearity
 
 # See also function vif() in package "car"
-VIF <- rep(0,2)
-VIF[1] <- 1/(1-summary(lm(Species ~ Sepal.Length, data = data))$r.squared)
-VIF[2] <- 1/(1-summary(lm(Sepal.Length ~ as.factor(Species), data = data))$r.squared)
+VIF <- 1/(1-summary(lm(Sepal.Length ~ as.factor(Species), data = data))$r.squared)
 VIF
 
 ## Test for heteroskedasticity
@@ -181,7 +176,7 @@ plot(case, rstudent(ols_quadratic), type="l", xlab="Case Numbers",
      ylab="Studentized Deleted Residuals", main="Test for Outlying Y Values")
 text(case, rstudent(ols_quadratic), case)
 alpha <- 0.05
-crit <- qt(1-alpha/2n, n-p-1)
+crit <- qt(1-alpha/(2*n), n-p-1)
 which(abs(rstudent(ols_quadratic)) >=crit ) # Here there's no evidence of outlying Y observations
 
 ## Test for outlying X observations--hat matrix leverage values
@@ -323,8 +318,8 @@ plot(df_original$data,df_fitted$data)
 
 # Hierarchical modeling
 
-student_data <- read.csv("~/Downloads/hsb1.csv")
-school_data  <- read.csv("~/Downloads/hsb2.csv")
+student_data <- read.csv("hsb1.csv")
+school_data  <- read.csv("hsb2.csv")
 student_data$ses_grandmean <- student_data$ses - mean(student_data$ses) # Grand-mean centered student SES 
 school_data$sm_ses_grandmean <- school_data$meanses - mean(school_data$meanses) # Grand-mean centered school SES
 
@@ -346,11 +341,6 @@ xyplot(mathach ~ ses |as.factor(id), subset,
                         col.line = 'black',
                         type = c("p", "smooth"),
                         main = 'Variability in Math Achievement ~ SES Relationship')
-
-xyplot(mathach ~ ses, subset,
-       type = c("p", "smooth"),
-       group = data$id,
-       main = 'Variability in Math Achievement ~ SES Relationship')
 
 unconditional <- lmer(mathach ~ 1 + (1|id), data = data)
 summary(unconditional) # on p-values in nlme: https://stat.ethz.ch/pipermail/r-help/2006-May/094765.html
