@@ -28,19 +28,30 @@ round(cbind(mean, standard_deviation, number_of_observations), digits = 6)
 
 ## Histogram
 
-hist(data$Sepal.Width)
-
+hist(data$Sepal.Width,
+     xlab='Sepal Width',ylab='Count',
+     main= 'Histogram plot of sepal length vs sepal width')
 ## Scatter plot
 
-plot(data$Sepal.Length, data$Sepal.Width)
+plot(data$Sepal.Length, data$Sepal.Width,
+     xlab='Sepal length', ylab='Sepal Width',
+     main= 'Scatter plot of sepal length vs sepal width')
 
 ## Stacking plots (without ggplot2)
 
-plot(data[data$Species == "setosa", ]$Sepal.Length, data[data$Species == "setosa", ]$Sepal.Width)
-par(new = TRUE, col = "red")
-plot(data[data$Species == "versicolor", ]$Sepal.Length, data[data$Species == "versicolor", ]$Sepal.Width)
-par(new = TRUE, col = "green")
-plot(data[data$Species == "virginica", ]$Sepal.Length, data[data$Species == "virginica", ]$Sepal.Width)
+plot(data[data$Species == "setosa", ]$Sepal.Length, 
+     data[data$Species == "setosa", ]$Sepal.Width, 
+     xlab = 'Sepal Length',  ylab= 'Sepal Width',
+     xlim = range(as.matrix(data$Sepal.Length)), 
+     ylim = range(as.matrix(data$Sepal.Width)),
+     main= 'Scatter plot of sepal length vs sepal width')
+
+points(data[data$Species == "versicolor", ]$Sepal.Length,
+       data[data$Species == "versicolor", ]$Sepal.Width,
+       col = 'yellow')
+
+points(data[data$Species == "virginica", ]$Sepal.Length,
+       data[data$Species == "virginica", ]$Sepal.Width, col = 'blue')
 
 ## Scatter plot matrix
 
@@ -54,25 +65,87 @@ cor(data[,c(1:4)])
 
 ## Linear regression syntax
 
+### General Syntax: Constant Term
+
 ols <- lm(Sepal.Width ~ Sepal.Length + as.factor(Species), data = data)
 summary(ols)
+print(mean(data$Sepal.Width))
+
+plot(data[data$Species == "setosa", ]$Sepal.Length, 
+     data[data$Species == "setosa", ]$Sepal.Width, 
+     xlab = 'Sepal Width',  ylab= 'Sepal Length',
+     xlim = range(as.matrix(data$Sepal.Length)), 
+     ylim = range(as.matrix(data$Sepal.Width)),
+     main= 'Scatter plot of sepal length vs sepal width')
+
+coefs = coef(ols)
+abline(coefs[1],0)
+
+### General Syntax: Explanatory Variable and Constant Term
 
 ols_quadratic <- lm(Sepal.Width ~ Sepal.Length + I(Sepal.Length^2) + as.factor(Species), data = data)
 summary(ols_quadratic)
 
-ols_interaction <- lm(Sepal.Width ~ Sepal.Length*as.factor(Species), data = data)
+plot(data[data$Species == "setosa", ]$Sepal.Length, 
+     data[data$Species == "setosa", ]$Sepal.Width, 
+     xlab = 'Sepal Width',  ylab= 'Sepal Length',
+     xlim = range(as.matrix(data$Sepal.Length)), 
+     ylim = range(as.matrix(data$Sepal.Width)),
+     main= 'Scatter plot of sepal length vs sepal width')
+
+coefs = coef(ols)
+abline(coefs[1],coefs[2])
+
+### General Syntax: Factors
+
+ols <- lm(Sepal.Width ~ 1 + Sepal.Length + as.factor(Species), data = data)
+summary(ols)
+
+plot(data[data$Species == "setosa", ]$Sepal.Length, 
+     data[data$Species == "setosa", ]$Sepal.Width, 
+     xlab = 'Sepal Width',  ylab= 'Sepal Length',
+     xlim = range(as.matrix(data$Sepal.Length)), 
+     ylim = range(as.matrix(data$Sepal.Width)),
+     main= 'Scatter plot of sepal length vs sepal width')
+
+points(data[data$Species == "versicolor", ]$Sepal.Length,
+       data[data$Species == "versicolor", ]$Sepal.Width,
+       col = 'yellow')
+
+points(data[data$Species == "virginica", ]$Sepal.Length,
+       data[data$Species == "virginica", ]$Sepal.Width, col = 'blue')
+coefs = coef(ols)
+abline(coefs[1],coefs[2])
+abline(coefs[3] + coefs[1],coefs[2],col='yellow')
+abline(coefs[4] +coefs[1],coefs[2],col='blue')
+
+### Advanced Syntax: Nonlinear Regression
+
+ols_quadratic <- lm(Sepal.Width ~ Sepal.Length + I(Sepal.Length^2), data = data)
+summary(ols_quadratic)
+
+
+### Advanced Syntax: Interaction term
+
+ols_interaction <- lm(Sepal.Width ~ Sepal.Length + Petal.Length + Sepal.Length*Petal.Length, data = data)
 summary(ols_interaction)
+
+### Advanced Syntax: Non-linear regression and Interaction term 
 
 ols_q_i <- lm(Sepal.Width ~ Sepal.Length*as.factor(Species) + I(Sepal.Length^2), data = data)
 summary(ols_q_i)
 
+
 ## Obtaining the residuals
 
 res <- ols$residuals
+head(res)
+
 
 ## Obtaining the fitted values
 
 pred <- ols$fitted.values
+head(data.frame(pred=pred,orig=data$Sepal.Width ))
 
 ## Obtaining the ANOVA table
 
@@ -88,11 +161,14 @@ confint(ols, level = 0.95)
 
 ## Obtaining confidence interval of the mean response
 
-predict(ols, data.frame(Sepal.Length=4.0, Species="setosa"), interval="confidence", level = 0.95, se.fit=TRUE)
+predict(ols, data.frame(Sepal.Length=4.0, Species="setosa"),
+        interval="confidence", 
+        level = 0.95, se.fit=TRUE)
 
 ## Obtaining prediction limits for new observation
 
-predict(ols, data.frame(Sepal.Length=4.0, Species="setosa"),  interval="prediction", level = 0.95, se.fit=TRUE)
+predict(ols, data.frame(Sepal.Length=4.0, Species="setosa"), 
+        interval="prediction", level = 0.95, se.fit=TRUE)
 
 ## Obtaining confidence band for the entire regression line
 
@@ -215,111 +291,325 @@ inf_obs3
 
 # Generalized linear models
 
-## logistic regression
-
+# Logistic regression
+data <- iris
 data$Sepal.Width_binary <- ifelse(data$Sepal.Width >= median(data$Sepal.Width), 1, 0)
-logit <- glm(Sepal.Width_binary ~ Sepal.Length + as.factor(Species), data = data, family = "binomial")
+
+## Data 
+
+## Logistic Regression with only the constant term
+
+logit <- glm(Sepal.Width_binary ~ 1, data = data, family = "binomial")
 summary(logit)
 
-## Plot the logistic regression line and smoothing line
 
-plot(Sepal.Width_binary~Sepal.Length, data=data)
-lines(data$Sepal.Length[order(data$Sepal.Length)], logit$fitted[order(data$Sepal.Length)], 
-       type="l", col="red")
-title(main="Data with Fitted Logistic Regression Line")
+p_avg <- mean(data$Sepal.Width_binary)
+log_odds_avg <- log(p_avg/(1-p_avg))
+print(log_odds_avg)
 
-data.smooth <- predict(loess(Sepal.Width_binary~Sepal.Length, data=data, span=0.75))
-points(data$Sepal.Length[order(data$Sepal.Length)], data.smooth[order(data$Sepal.Length)], 
-      type="b",lty=2, col="green")
-legend(5,0.9, c("logistic","loess smooth"), col=c("red", "green"), lty=c(1:2))
+## Logistic Regression with Species  
 
-## Exponentiated coefficients
+logit <- glm(Sepal.Width_binary ~ as.factor(Species), data = data, family = "binomial")
+summary(logit)
 
-exp(coef(logit))
+log_odds_avg_fun <- function(data){
+  p_avg <- mean(data)
+  log_odds_avg <- log(p_avg/(1-p_avg))
+  return(log_odds_avg)
+}
 
-# Poisson and Quasi-Poisson Regression
-data(epil)
-summary(epil)
-df=epil[epil$V4 == 1,]
-df <- subset(df, select = -c(V4,period))
+tapply(data$Sepal.Width_binary,
+       data$Species, log_odds_avg_fun)
 
-sapply(df, class)
-ggplot(df,aes(x=df$y))+ 
-  geom_histogram(binwidth = 1, center = 0.5) +
-  scale_x_continuous(breaks=seq(1,max(df$y), by = 5))+
-  ylab("Count")+ xlab("data")+
-  ggtitle("Histogram plot of the number of epileptic seizures after the last 2 weeks")
+coefficients<-unname(coef(logit))
+print(c(coefficients[1],coefficients[1]+coefficients[2],
+        coefficients[1]+coefficients[3]))
 
-### get column names
-print(colnames(df))
+## Logistic Regression with continuous variable
 
-model = glm(y~ 1, family=poisson(link=log),data=df)
-summary(model)
+## Logistic Regression with continuous variable, Sepal.Length
 
-### get coefficients
-print(coef(model))
+logit <- glm(Sepal.Width_binary ~ Sepal.Length, 
+             data = data, family = "binomial")
+summary(logit)
 
-### print fitted model values
-print(data.frame(df$y,model$fitted))
+logit <- glm(Sepal.Width_binary ~ Species +Sepal.Length, 
+             data = data, family = "binomial")
+summary(logit)
 
-### print model predictors 
-model$linear.predictors
-exp(model$linear.predictors)
+plot(data[data$Species == "setosa", ]$Sepal.Length, 
+     data[data$Species == "setosa", ]$Sepal.Width_binary, 
+     xlim=as.matrix(range(data$Sepal.Length)),
+     xlab = 'Sepal Length',  ylab= 'Sepal Width binary',
+     main= 'Scatter plot of sepal length vs sepal width')
+
+points(data$Sepal.Length[data$Species == "setosa"],
+       logit$fitted[data$Species == "setosa"],  pch=15,
+       col="red")
+
+plot(data[data$Species == "versicolor", ]$Sepal.Length,
+     data[data$Species == "versicolor", ]$Sepal.Width_binary,
+     xlim=as.matrix(range(data$Sepal.Length)),
+     xlab = 'Sepal Length',  ylab= 'Sepal Width binary',
+     main= 'Scatter plot of sepal length vs sepal width')
+
+points(data$Sepal.Length[data$Species == "versicolor"],
+       logit$fitted[data$Species == "versicolor"],  pch=15,
+       col="yellow")
+
+plot(data[data$Species == "virginica", ]$Sepal.Length,
+     data[data$Species == "virginica", ]$Sepal.Width_binary,
+     xlim=as.matrix(range(data$Sepal.Length)),
+     xlab = 'Sepal Length',  ylab= 'Sepal Width binary',
+     main= 'Scatter plot of sepal length vs sepal width')
+
+points(data$Sepal.Length[data$Species == "virginica"],
+       logit$fitted[data$Species == "virginica"],  pch=15,
+       col="blue")
+
+## Goodness of Fit
+
+### Deviance
+
+### Saturated Model
+
+p_value = pchisq(logit$deviance, 
+                 logit$df.residual, lower.tail = F)
+print(p_value)
+
+p_value = pchisq(logit$null.deviance-logit$deviance,
+                 logit$df.null-logit$df.residual, lower.tail = F)
+print(p_value)
+
+anova(logit,test="Chisq")
+
+# Poisson General Linear Model
+
+attach(bioChemists)
+summary(bioChemists)
+
+sapply(bioChemists, class)
+
+bioChemists$kid5 <- factor(bioChemists$kid5, 
+                           levels= unique(bioChemists$kid5),
+                           labels= unique(bioChemists$kid5))
+
+ggplot(bioChemists,aes(x=bioChemists$art))+ 
+  geom_histogram(binwidth = 1, center = 1) +
+  scale_x_continuous(breaks=seq(0,max(bioChemists$art), by = 1))+
+  ylab("Frequency")+ xlab("data")+
+  ggtitle("Histogram plot of the number of articles published by biochemist phd students in last 3 years")
+
+mean(bioChemists$art)
+var(bioChemists$art)
+
+## Possion Regression with constant term
+
+poisson_model = glm(art ~ 1, family=poisson(link=log),data=bioChemists)
+summary(poisson_model)
+
+print(coef(poisson_model))
+
+print(log(mean(bioChemists$art)))
+
+## Goodness of fit
+
+### Saturated model
+
+p_value = pchisq(poisson_model$deviance,
+                 poisson_model$df.residual, lower.tail = F)
+print(p_value)
+
+## Possion Regression with martial status covariate
+
+poisson_model = glm(art~1+mar , family=poisson(link=log),data=bioChemists)
+summary(poisson_model)
+
+plot(bioChemists$art,ylab='number of articles',xlab = 'Index')
+points(poisson_model$fitted[bioChemists$mar=='Single'],col="red")
+points(poisson_model$fitted[bioChemists$mar=='Married'],col="blue")
+
+p_value = pchisq(poisson_model$deviance,
+                 poisson_model$df.residual, lower.tail = F)
+print(p_value)
+
+p_value = pchisq(poisson_model$null.deviance-logit$deviance,
+                 poisson_model$df.null-logit$df.residual, lower.tail = F)
+print(p_value)
+
+anova(poisson_model,test="Chisq")
+
+##  Possion Regression with martial status and children covariate
+
+poisson_model = glm(art ~ 1 + kid5 + mar,
+                    family=poisson(link=log),data=bioChemists)
+summary(poisson_model)
+
+plot(bioChemists$art,ylab='number of articles',xlab = 'Index')
+single_bioChemists = bioChemists[bioChemists$mar=='Single',]
+
+points(poisson_model$fitted[single_bioChemists$kid5== 0],col="blue",pch=1)
+points(poisson_model$fitted[single_bioChemists$kid5== 1],col="yellow",pch=1)
+points(poisson_model$fitted[single_bioChemists$kid5== 2],col="red",pch=1)
+points(poisson_model$fitted[single_bioChemists$kid5== 3],col="green",pch=1)
 
 
-### Hypothesis test for goodness of fit
-print(1-pchisq(model$deviance,model$df.residual))
+plot(bioChemists$art,ylab='number of articles',xlab = 'Index')
+mar_bioChemists = bioChemists[bioChemists$mar=='Married',]
 
-#plot data comparison
-df_original = data.frame(data=df$y)
-df_fitted = data.frame(data=model$fitted)
-plot(df_original$data,df_fitted$data,ylabel='fit data',xlabel='original data')
+points(poisson_model$fitted[mar_bioChemists$kid5== 0],col="blue",pch=2)
+points(poisson_model$fitted[mar_bioChemists$kid5== 1],col="yellow",pch=2)
+points(poisson_model$fitted[mar_bioChemists$kid5== 2],col="red",pch=2)
+points(poisson_model$fitted[mar_bioChemists$kid5== 3],col="green",pch=2)
 
+## Goodness of Fit
 
-### add a Covariate to the fit -- treatment
-model = glm(y~ 1 +trt, family=poisson(link=log),df)
-summary(model)
+### Saturated model 
 
-print(1-pchisq(model$deviance,model$df.residual))
+p_value = pchisq(poisson_model$deviance,
+                 poisson_model$df.residual, lower.tail = F)
+print(p_value)
 
-df_fitted = data.frame(data=model$fitted)
-df_fitted$name = "fitted"
+### Null model
 
-plot(df_original$data,df_fitted$data)
+p_value = pchisq(poisson_model$null.deviance-poisson_model$deviance,
+                 poisson_model$df.null-poisson_model$df.residual, lower.tail = F)
+print(p_value)
 
+### Anova
 
-### add a Covariate to the fit -- treatment, age
-model = glm(y ~ 1 +trt*age, family=poisson(link=log),df)
-summary(model)
-
-print(1-pchisq(model$deviance,model$df.residual))
-
-df_fitted = data.frame(data=model$fitted)
-df_fitted$name = "fitted"
-
-combined=rbind(df_original,df_fitted)
-
-plot(df_original$data,df_fitted$data)
+anova(poisson_model,test="Chisq")
 
 
-### Overdispersion might be present -- try Quasipossion  
-model = glm(y ~ 1 +trt*age, family=quasipoisson(link=log),df)
-summary(model)
+##  Possion Regression with continuous variables, mentor articles and martial status
 
-print(1-pchisq(model$deviance,model$df.residual))
+poisson_model = glm(art ~ 1 + ment +mar,
+                    family=poisson(link=log),data=bioChemists)
+summary(poisson_model)
 
-df_fitted = data.frame(data=model$fitted)
-df_fitted$name = "fitted"
+plot(bioChemists$art,ylab='number of articles',xlab = 'Index')
 
-combined=rbind(df_original,df_fitted)
+points(poisson_model$fitted,col="blue",pch=1)
 
-plot(df_original$data,df_fitted$data)
+## Goodness of Fit
+
+### Saturated model 
+
+p_value = pchisq(poisson_model$deviance,
+                 poisson_model$df.residual, lower.tail = F)
+print(p_value)
+
+### Null model
+
+p_value = pchisq(poisson_model$null.deviance-poisson_model$deviance,
+                 poisson_model$df.null-poisson_model$df.residual, lower.tail = F)
+print(p_value)
 
 
-# Hierarchical modeling
+### Anova
 
-student_data <- read.csv("hsb1.csv")
-school_data  <- read.csv("hsb2.csv")
+anova(poisson_model,test="Chisq")
+
+
+# Log-Linear Regression
+
+## Contingency Table
+
+bioChemists$art_binary <- sapply(bioChemists$art,function(x) ifelse(x > 1, 1, 0))
+bioChemists$ment_binary <- sapply(bioChemists$ment,function(x) ifelse(x > median(bioChemists$ment), 1, 0))
+
+### One-Way Contingency Table
+
+table(art_relative=bioChemists$art_binary)
+
+### Two-Way Contingency Table
+
+table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary)
+
+### Three-Way Contingency Table
+
+table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary,
+      kid5=bioChemists$kid5)
+
+## Independent Model for two-way contigency table
+
+contigency_table = table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary)
+contigency_table.df = as.data.frame(contigency_table)
+print(contigency_table.df)
+
+log_linear_model_int <- glm(Freq ~ art_relative + ment, 
+                            data = contigency_table.df, family = poisson)
+summary(log_linear_model_int)
+
+### Goodness of fit
+
+p_value = pchisq(log_linear_model_int$deviance,
+                 log_linear_model_int$df.residual, lower.tail = F)
+print(p_value)
+
+## Saturated Model for the two-way contingency table 
+
+log_linear_model_sat <- glm(Freq ~ art_relative*ment, 
+                            data = contigency_table.df, family = poisson)
+summary(log_linear_model_sat)
+
+
+### Goodness of fit
+
+p_value = pchisq(0,
+                 log_linear_model_sat$df.residual, 
+                 lower.tail = F)
+print(p_value)
+
+
+## Model Comparison
+
+anova(log_linear_model_int,log_linear_model_sat,test='Chisq')
+
+anova(log_linear_model_sat,test='Chisq')
+
+## Independent Model for the three-way contingency table 
+
+contigency_table = table(art_relative=bioChemists$art_binary,
+                         ment=bioChemists$ment_binary,
+                         kid5=bioChemists$kid5)
+contigency_table.df = as.data.frame(contigency_table)
+
+log_linear_model_int <- glm(Freq ~ art_relative + ment + kid5, 
+                            data = contigency_table.df, family = poisson)
+summary(log_linear_model_int)
+
+### Goodness of fit
+
+p_value = pchisq(log_linear_model_int$deviance,
+                 log_linear_model_int$df.residual, lower.tail = F)
+print(p_value)
+
+## Saturated Model
+
+
+log_linear_model_sat <- glm(Freq ~ art_relative*ment*kid5, 
+                            data = contigency_table.df, family = poisson)
+summary(log_linear_model_sat)
+
+### Goodness of fit
+
+p_value = pchisq(log_linear_model_sat$deviance,
+                 log_linear_model_sat$df.residual, lower.tail = F)
+print(p_value)
+
+##  Model Comparison
+
+anova(log_linear_model_int,log_linear_model_sat,test='Chisq')
+
+anova(log_linear_model_sat,test='Chisq')
+
+### Goodness of fit
+
+## Hierarchical modeling
+
+student_data <- read.csv("data/hsb1.csv")
+school_data  <- read.csv("data/hsb2.csv")
 student_data$ses_grandmean <- student_data$ses - mean(student_data$ses) # Grand-mean centered student SES 
 school_data$sm_ses_grandmean <- school_data$meanses - mean(school_data$meanses) # Grand-mean centered school SES
 
@@ -393,128 +683,241 @@ specified_variance_covariance_matrix_for_random_effects <- lme(mathach ~ 1 + gro
 summary(specified_variance_covariance_matrix_for_random_effects)
  
 # Survival Analysis
+
 attach(colon)
 head(colon)
 
-sapply(colon,class)
-
-###Dichotomize age and nodes. Change data labels to factors
+## Subsetting data and converting data
 
 colon_subset_recurrence = colon[colon$etype==1,]
-colon_subset_recurrence$age.ds = sapply(colon_subset_recurrence$age, function(x) ifelse(x > 60, 1, 0))
-colon_subset_recurrence$age.ds <- factor(colon_subset_recurrence$age.ds, levels= c("0","1"), labels=c("<60",">60"))
-colon_subset_recurrence$nodes.ds = sapply(colon_subset_recurrence$nodes, function(x) ifelse(x > 3, 1, 0))
-colon_subset_recurrence$nodes.ds <- factor(colon_subset_recurrence$nodes.ds, levels= c("0","1"), labels=c("<3",">3"))
+colon_subset_recurrence$age.ds = sapply(colon_subset_recurrence$age,
+                                        function(x) ifelse(x > 60, 1, 0))
 
-colon_subset_recurrence$sex <- factor(colon_subset_recurrence$sex, levels= c("0","1"), labels=c("F","M"))
-colon_subset_recurrence$obstruct <- factor(colon_subset_recurrence$obstruct,levels= c("0","1"), labels=c("no obstruct","obstruct"))
-colon_subset_recurrence$adhere <- factor(colon_subset_recurrence$adhere,levels= c("0","1"), labels=c("no adhere","adhere"))
+sapply(colon,class)
 
-colon_subset_recurrence$perfor <- factor(colon_subset_recurrence$perfor, levels= c("0","1"), labels=c("no perfor","perfor"))
-colon_subset_recurrence$differ <- factor(colon_subset_recurrence$differ, levels= c("1","2","3"), labels=c("well","mod","poor"))
-colon_subset_recurrence$extent <- factor(colon_subset_recurrence$extent,  levels= c("1","2","3","4"),
+colon_subset_recurrence$age.ds <- factor(colon_subset_recurrence$age.ds, 
+                                         levels= c("0","1"),
+                                         labels=c("<60",">60"))
+
+colon_subset_recurrence$node4 <- factor(colon_subset_recurrence$node4, 
+                                        levels= c("0","1"), 
+                                        labels=c("<4",">4"))
+
+
+colon_subset_recurrence$sex <- factor(colon_subset_recurrence$sex,
+                                      levels= c("0","1"), labels=c("F","M"))
+
+colon_subset_recurrence$obstruct <- factor(colon_subset_recurrence$obstruct,
+                                           levels= c("0","1"),
+                                           labels=c("no obstruct","obstruct"))
+colon_subset_recurrence$adhere <- factor(colon_subset_recurrence$adhere,
+                                         levels= c("0","1"),
+                                         labels=c("no adhere","adhere"))
+colon_subset_recurrence$perfor <- factor(colon_subset_recurrence$perfor, 
+                                         levels= c("0","1"), 
+                                         labels=c("no perfor","perfor"))
+
+colon_subset_recurrence$differ <- factor(colon_subset_recurrence$differ,
+                                         levels= c("1","2","3"),
+                                         labels=c("well","mod","poor"))
+colon_subset_recurrence$extent <- factor(colon_subset_recurrence$extent, 
+                                         levels= c("1","2","3","4"),
                                          labels=c("submucosa", "muscle", "serosa", "contiguous"))
-colon_subset_recurrence$surg <- factor(colon_subset_recurrence$surg,levels= c("0","1"), 
+colon_subset_recurrence$surg <- factor(colon_subset_recurrence$surg,
+                                       levels= c("0","1"), 
                                        labels=c("short","long"))
+
+
 head(colon_subset_recurrence)
 
+
+## Surv Object
+
 surv <-with(colon_subset_recurrence, Surv(time,status))
+head(surv)
 
-# Kalpan-Meier
+# Kalpan-Meier Estimator
+
+##  Kalpan-Meier Estimator for the entire data
+
 km_fit <- survfit(surv~1, data=colon_subset_recurrence)
-summary(km_fit)
-autoplot(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE)
 
-km_fit <- survfit(surv~1 + obstruct, data=colon_subset_recurrence)
-summary(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,conf.int = TRUE,
-           risk.table = TRUE, ggtheme = theme_bw(),risk.table.col = "strata")
+summary(km_fit,times=c(1,10,20,30,40,50))
 
-km_fit <- survfit(surv~1 + adhere, data=colon_subset_recurrence)
-summary(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,conf.int = TRUE)
+ggsurvplot(km_fit, data = colon_subset_recurrence,
+           conf.int = TRUE,risk.table = TRUE,
+           ggtheme = theme_bw(),
+           risk.table.col = "strata")
 
-km_fit <- survfit(surv~1 + adhere + obstruct, data=colon_subset_recurrence)
-summary(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,
-           conf.int = TRUE)
+##  Kalpan-Meier Estimator for the data divided into obstruct and no obstruct
 
-km_fit <- survfit(surv~1 + nodes.ds + obstruct, data=colon_subset_recurrence)
-summary(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,
-           conf.int = TRUE)
+km_fit <- survfit(surv~obstruct, data=colon_subset_recurrence)
 
-km_fit <- survfit(surv~1 + nodes.ds + obstruct + adhere, data=colon_subset_recurrence)
-summary(km_fit)
-ggsurvplot(km_fit, data = colon_subset_recurrence, pval = TRUE,
-           conf.int = TRUE)
+summary(km_fit,times=c(1,10,20,30,40,50))
 
-#Cox Proportional Hazard
-cox <- coxph(Surv(time,status) ~ 1 + obstruct, data=colon_subset_recurrence)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable="obstruct",conf.int = TRUE)
+ggsurvplot(km_fit, data = colon_subset_recurrence, 
+           pval = TRUE,conf.int = TRUE,
+           risk.table = TRUE, ggtheme = theme_bw(),
+           risk.table.col = "strata")
+
+p_value <- survdiff(surv~obstruct, data=colon_subset_recurrence)
+print(p_value)
+
+##  Kalpan-Meier Estimator for the data divided into adhere and no adhere
+
+km_fit <- survfit(surv~adhere, data=colon_subset_recurrence)
+
+summary(km_fit,times=c(1,10,20,30,40,50))
+
+ggsurvplot(km_fit, data = colon_subset_recurrence, 
+           pval = TRUE,conf.int = TRUE,
+           risk.table = TRUE, ggtheme = theme_bw(),
+           risk.table.col = "strata")
+
+survdiff(surv~adhere,data=colon_subset_recurrence)
+
+
+##  Kalpan-Meier Estimator for the data divided into (adhere, obstruct), (adhere, no obstruct), (no adhere, obstruct) and (no adhere, no obstruct) 
+
+km_fit <- survfit(surv~adhere + obstruct, data=colon_subset_recurrence)
+
+summary(km_fit,times=c(1,10,20,30,40,50))
+
+ggsurvplot(km_fit, data = colon_subset_recurrence, 
+           pval = TRUE,conf.int = TRUE,
+           risk.table = TRUE, ggtheme = theme_bw(),
+           risk.table.col = "strata")
+
+survdiff(surv~adhere + obstruct,data=colon_subset_recurrence)
+
+# Cox Proportional Hazard
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$
+
+cox <- coxph(surv ~  surg,
+             data=colon_subset_recurrence)
+
 summary(cox)
 coef(cox)
-test.ph <- cox.zph(cox)
-test.ph
 ggforest(cox, data = colon_subset_recurrence)
 
+### Testing Proportionality Assumption
 
-cox <- coxph(Surv(time,status) ~ 1 + obstruct + adhere, data=colon_subset_recurrence)
+test.ph <- cox.zph(cox)
+print(test.ph)
+plot(test.ph)
+
+### Model Selection
+
+anova(cox)
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$
+
+
+cox <- coxph(surv ~  surg + adhere, 
+             data=colon_subset_recurrence)
 summary(cox)
 coef(cox)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "obstruct",conf.int = TRUE)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "adhere",conf.int = TRUE)
 ggforest(cox, data = colon_subset_recurrence)
-test.ph <- cox.zph(cox)
-test.ph
 
-cox <- coxph(Surv(time,status) ~ 1 + obstruct + adhere + nodes.ds, data=colon_subset_recurrence)
+### Testing Proportionality Assumption
+
+test.ph <- cox.zph(cox)
+print(test.ph)
+par(mfrow=c(1,2))   
+plot(test.ph)
+
+### Model Selection
+
+anova(cox)
+
+## Cox Proportional Hazard for $X_1 = \text{surg}$, $X_2 = \text{adher}$, $X_3 = \text{nodes}$
+
+cox <- coxph(surv ~ surg + adhere + nodes, 
+             data=colon_subset_recurrence)
 summary(cox)
 coef(cox)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "obstruct",conf.int = TRUE)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "adhere",conf.int = TRUE)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "nodes.ds",conf.int = TRUE)
 ggforest(cox, data = colon_subset_recurrence)
+
+### Testing Proportionality Assumption
+
 test.ph <- cox.zph(cox)
 test.ph
+par(mfrow=c(1,3))   
+plot(test.ph)
 
-cox <- coxph(Surv(time,status) ~ 1 + obstruct + adhere + nodes.ds + extent, data=colon_subset_recurrence)
-summary(cox)
-coef(cox)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "obstruct",conf.int = TRUE)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "adhere",conf.int = TRUE)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "nodes.ds",conf.int = TRUE)
-ggadjustedcurves(cox,data=colon_subset_recurrence,variable = "extent",conf.int = TRUE)
-ggforest(cox, data = colon_subset_recurrence)
-test.ph <- cox.zph(cox)
-test.ph
+### Model Selection
 
-### create a new subject and see their survival curve
+anova(cox)
 
-subject_one <- data.frame(obstruct = factor('no obstruct'), adhere = factor('adhere'), nodes.ds = factor('<3'), 
-                          extent=factor('serosa'))
-prediction_one <- survfit(cox, subject_one, data = colon_subset_recurrence)
-ggsurvplot(prediction_one, ylab = "No recurrence probability")
-ggsurvplot(prediction_one, fun="cumhaz")
+## Estimating Survival Curve
 
-td.coxph <- time.dep.coxph(burn, 'T1', 'D1', 2:4, 'Z1', verbose=F)
+subject_one <- data.frame(surg = factor('short'),
+                          adhere = factor('adhere'), nodes = 5)
 
-# Aalen's additive regression model
+prediction_one <- survfit(cox, subject_one, 
+                          data = colon_subset_recurrence)
 
-aa_fit <- aareg(surv ~1 + obstruct + adhere + nodes.ds + surg + rx + age, data = colon_subset_recurrence)
-autoplot(aa_fit)
-summary(aa_fit)
+ggsurvplot(prediction_one, ylab = "Probability of no recurrence ",
+           conf.int = TRUE,
+           ggtheme = theme_bw())
 
-#Accelerated failure time models
+ggsurvplot(prediction_one, fun="cumhaz",
+           conf.int = TRUE,risk.table = TRUE,
+           ggtheme = theme_bw(),
+           risk.table.col = "strata")
 
-sr_fit = survreg(surv ~ 1 + obstruct + adhere + nodes.ds, dist="weibull",data=colon_subset_recurrence)
-summary(sr_fit)
+# Accelerated failure time models
 
-### create a new subject and see their survival curve
+## Exponential models
 
-subject_two = list(obstruct = factor('no obstruct'), adhere = factor('adhere'), nodes.ds = factor('<3'))
-prediction_two = survfit(sr_fit, subject_two, data = colon_subset_recurrence)
-plot(predict(sr_fit, newdata=subject_two,type="quantile",p=seq(.01,.99,by=.01)),seq(.99,.01,by=-.01),
-     col="red",type='l',xlab='time',ylab='Survival probability',main='Weibull')
-detach(colon)
+###  Learning Exponential models
+
+survregExp <- survreg(surv ~ 1 + surg + adhere + nodes,
+                      dist="exponential",data=colon_subset_recurrence)
+summary(survregExp)
+
+### Estimating Survival Curve
+
+subject_two = list(surg = factor('short'), adhere = factor('no adhere'), nodes = 5)
+
+plot(predict(survregExp, newdata=subject_two,
+             type="quantile",p=seq(.01,.99,by=.01)),
+     seq(.99,.01,by=-.01), col="red",type='l',xlab='time',
+     ylab='Survival probability',main='Exponential AFT Model')
+
+
+###  Learning Weibull models
+
+survregWeibull = survreg(surv ~ 1 + surg + adhere + nodes,
+                         dist="weibull",data=colon_subset_recurrence)
+summary(survregWeibull)
+
+subject_two = list(surg = factor('short'), 
+                   adhere = factor('no adhere'), 
+                   nodes = 5)
+
+
+plot(predict(survregWeibull, newdata=subject_two,
+             type="quantile",p=seq(.01,.99,by=.01)),
+     seq(.99,.01,by=-.01), col="red",type='l',xlab='time',
+     ylab='Survival probability',main='Weibull AFT Model')
+
+### Log-normal models
+
+###  Learning Log-normal models
+
+survregLogNormal = survreg(surv ~ 1 + surg + adhere + nodes,
+                           dist="lognormal",data=colon_subset_recurrence)
+summary(survregLogNormal)
+
+### Estimating Survival Curve
+
+subject_two = list(surg = factor('short'), 
+                   adhere = factor('no adhere'), 
+                   nodes = 5)
+
+plot(predict(survregLogNormal, newdata=subject_two,
+             type="quantile",p=seq(.01,.99,by=.01)),
+     seq(.99,.01,by=-.01), col="red",type='l',xlab='time',
+     ylab='Survival probability',main='Log Normal AFT Model')

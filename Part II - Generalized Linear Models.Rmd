@@ -90,9 +90,8 @@ summary(logit)
 
 Let's compare the results to the average log odds of each Species group
 
-\tiny
 
-```{r,out.width='30%'}
+```{r}
 log_odds_avg_fun <- function(data){
   p_avg <- mean(data)
   log_odds_avg <- log(p_avg/(1-p_avg))
@@ -102,7 +101,6 @@ log_odds_avg_fun <- function(data){
 tapply(data$Sepal.Width_binary,
        data$Species, log_odds_avg_fun)
 ```
-\normalsize
 
 The intercept corresponds to the average log odds of setosa as we would expect. However, the other coefficients do not correspond to the average log odds of the other species. Why?
 
@@ -671,7 +669,7 @@ log_linear_model_int <- glm(Freq ~ art_relative + ment,
 summary(log_linear_model_int)
 ```
 
-## Goodness of fit
+### Goodness of fit
 
 We compare the current model to the saturated model (best possible fit).
 
@@ -693,7 +691,7 @@ log_linear_model_sat <- glm(Freq ~ art_relative*ment,
 summary(log_linear_model_sat)
 ```
 
-## Goodness of fit
+### Goodness of fit
 
 We compare the current model to the saturated model (best possible fit).
 
@@ -743,7 +741,7 @@ log_linear_model_int <- glm(Freq ~ art_relative + ment + kid5,
 summary(log_linear_model_int)
 ```
 
-## Goodness of fit
+### Goodness of fit
 
 We compare the current model to the saturated model (best possible fit).
 
@@ -758,7 +756,7 @@ Since our p value is less than 0.05, we reject the null hypothesis. The models a
 
 ## Saturated Model
 
-To create the *independent* model for the three-way contingency table, we use formula `Freq ~  art_relative*ment*kid5`. 
+To create the *saturated* model for the three-way contingency table, we use formula `Freq ~  art_relative*ment*kid5`. 
 
 
 ```{r}
@@ -766,7 +764,7 @@ log_linear_model_sat <- glm(Freq ~ art_relative*ment*kid5,
             data = contigency_table.df, family = poisson)
 summary(log_linear_model_sat)
 ```
-## Goodness of fit
+### Goodness of fit
 
 We compare the current model to the saturated model (best possible fit).
 
