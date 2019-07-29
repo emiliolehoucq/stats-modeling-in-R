@@ -7,7 +7,7 @@ library(nlme)
 
 # 1
 
-gss_2006 <- read.dta("/Users/emiliolehoucqmazuera/Google Drive/Teaching/Statistical modeling in R/Workshop materials/GSS2006.dta")
+gss_2006 <- read.dta("GSS2006.dta")
 
 # Descriptive statistics
 
@@ -114,7 +114,6 @@ qqline(std_res)
 
 # 14
 
-par(mfrow=c(2,2))
 plot(res ~ pred, xlab="Fitted", ylab="Residual", main="Residual plot against fitted values")
 abline(h=0)
 plot(res ~ gss_2006$age, xlab="X", ylab="Residual", main="Residual plot against age")
@@ -122,9 +121,7 @@ abline(h=0)
 
 # 15
 
-VIF <- rep(0,2)
-VIF[1] <- 1/(1-summary(lm(age~relevel(partyid, ref = "independent"),data=gss_2006))$r.squared)
-VIF[2] <- 1/(1-summary(lm(partyid~age,data=gss_2006))$r.squared)
+VIF <- 1/(1-summary(lm(age~relevel(partyid, ref = "independent"),data=gss_2006))$r.squared)
 VIF
 
 # 16
@@ -139,7 +136,7 @@ plot(case, rstudent(ols_2), type="l", xlab="Case Numbers",
      ylab="Studentized Deleted Residuals", main="Test for Outlying Y Values")
 text(case, rstudent(ols_2), case)
 alpha <- 0.05
-crit <- qt(1-alpha/2n, n-p-1)
+crit <- qt(1-alpha/(2*n), n-p-1)
 which(abs(rstudent(ols_2)) >=crit ) # There's no evidence of outlying Y observations
 
 # Logistic regression
@@ -178,7 +175,7 @@ legend(5,0.9, c("logistic","loess smooth"), col=c("red", "green"), lty=c(1:2))
 
 # 36
 
-wvs <- read.dta("~/Downloads/WV6_Data_Stata_v20180912.dta")
+wvs <- read.dta("WVS6.dta")
 
 table(wvs$V197)
 typeof(wvs$V197)
