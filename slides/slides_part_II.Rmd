@@ -1484,11 +1484,21 @@ confint(random_intercept_fixed_slope)
 
 # Hierarchical modeling
 
-In `lme()`, the random effects go after `ramdom =`. Again, the `1`stands for the intercept and `|`goes before the grouping variable.
+In `lme()`, the random effects go after `ramdom =`. Again, the `1` stands for the intercept and `|` goes before the grouping variable.
+
+\small
+```{r}
+random_intercept_fixed_slope_2 <- lme(mathach ~ 1 + groupmeanSES,
+                                      random = ~ 1 | id, data = data)
+```
+\normalsize
+
+---
+
+# Hierarchical modeling
 
 \tiny
 ```{r}
-random_intercept_fixed_slope_2 <- lme(mathach ~ 1 + groupmeanSES, random = ~ 1 | id, data = data)
 summary(random_intercept_fixed_slope_2)
 ```
 \normalsize
@@ -1501,10 +1511,8 @@ summary(random_intercept_fixed_slope_2)
 Here we added a random slope for `groupmeanSES`
 
 \tiny
-```{r, include=FALSE, messages=FALSE, warning=FALSE}
+```{r}
 random_intercept_random_slope <- lmer(mathach ~ 1 + groupmeanSES + (1 + groupmeanSES|id), data = data)
-```
-```{r,out.width='80%'}
 summary(random_intercept_random_slope)
 ```
 \normalsize
@@ -1515,12 +1523,21 @@ summary(random_intercept_random_slope)
 # Hierarchical modeling
 
 Here we added a random slope for `groupmeanSES`
-
 \tiny
 ```{r}
 random_intercept_random_slope_2 <- lme(mathach ~ 1 + groupmeanSES, 
                                        random = ~ 1 + groupmeanSES | id,
                                        data = data)
+```
+\normalsize
+
+---
+
+
+# Hierarchical modeling
+
+\tiny
+```{r}
 summary(random_intercept_random_slope_2)
 ```
 \normalsize
@@ -1530,26 +1547,47 @@ summary(random_intercept_random_slope_2)
 
 # Hierarchical modeling
 
-Here the `0`stands for no intercept, so we're leaving a fixed intercept.
+Here the `0` stands for no intercept, so we're leaving a fixed intercept.
 
-\tiny
+\small
 ```{r}
-fixed_intercept_random_slope <- lmer(mathach ~ 1 + groupmeanSES + (0 + groupmeanSES|id), data = data)
-summary(fixed_intercept_random_slope)
+fixed_intercept_random_slope <- lmer(mathach ~ 1 +
+                                       groupmeanSES 
+                                     + (0 + groupmeanSES|id),
+                                     data = data)
 ```
 \normalsize
-
 
 ---
 
 # Hierarchical modeling
 
-Again, the `0`stands for no intercept, so we're leaving a fixed intercept.
+\tiny
+```{r}
+summary(fixed_intercept_random_slope)
+```
+\normalsize
+
+---
+
+# Hierarchical modeling
+
+Again, the `0` stands for no intercept, so we're leaving a fixed intercept.
 
 \tiny
 ```{r}
 fixed_intercept_random_slope_2 <- lme(mathach ~ 1 + groupmeanSES,
                                       random = ~ 0 + groupmeanSES | id, data = data)
+
+```
+\normalsize
+
+---
+
+# Hierarchical modeling
+
+\tiny
+```{r}
 summary(fixed_intercept_random_slope_2)
 ```
 \normalsize
@@ -1566,6 +1604,15 @@ Here we added another level-2 variable, `sm_ses_grandmean`, which stands for the
 fixed_slope_level_two_variable <- lmer(mathach ~ 1 + groupmeanSES 
                                        + sm_ses_grandmean + (1|id),
                                        data = data)
+```
+\normalsize
+
+---
+
+# Hierarchical modeling
+
+\tiny
+```{r}
 summary(fixed_slope_level_two_variable)
 ```
 \normalsize
@@ -1582,6 +1629,16 @@ Again, we added another level-2 variable, `sm_ses_grandmean`, which stands for t
 fixed_slope_level_two_variable_2 <- lme(mathach ~ 1 + groupmeanSES 
                                         + sm_ses_grandmean,
                                         random = ~ 1 | id, data = data)
+```
+\normalsize
+
+---
+
+
+# Hierarchical modeling
+
+\tiny
+```{r}
 summary(fixed_slope_level_two_variable_2)
 ```
 \normalsize
@@ -1594,13 +1651,20 @@ summary(fixed_slope_level_two_variable_2)
 Here we model `groupmeanSES`, the group-mean centered student SES, as a random effect by putting it inside the parentheses.
 
 \tiny
-```{r,include=FALSE}
+```{r}
 random_slope_level_two_variable <- lmer(mathach ~ 1 + groupmeanSES 
                                         + sm_ses_grandmean 
                                         + (1 + groupmeanSES|id),
                                         data = data)
 ```
+\normalsize
 
+
+---
+
+# Hierarchical modeling
+
+\tiny
 ```{r,out.width='70%'}
 summary(random_slope_level_two_variable)
 ```
@@ -1642,12 +1706,24 @@ summary(random_slope_level_two_variable_2)
 
 # Hierarchical modeling
 
-Here we add a cross-level initeraction as a fixed effect.
+Here we add a cross-level interaction as a fixed effect.
 
 \tiny
 ```{r,out.width='60%'}
 fixed_slope_cl_interaction <- lmer(mathach ~ 1 + groupmeanSES*sm_ses_grandmean 
                                    + (1|id), data = data)
+```
+\normalsize
+
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r,out.width='60%'}
 summary(fixed_slope_cl_interaction)
 ```
 \normalsize
@@ -1664,6 +1740,16 @@ Again, we add a cross-level interaction as a fixed effect.
 ```{r}
 fixed_slope_cl_interaction_2 <- lme(mathach ~ 1 + groupmeanSES*sm_ses_grandmean,
                                     random = ~ 1 | id, data = data)
+```
+
+---
+
+# Hierarchical modeling
+
+Again, we add a cross-level interaction as a fixed effect.
+
+\tiny
+```{r}
 summary(fixed_slope_cl_interaction_2)
 ```
 \normalsize
@@ -1760,7 +1846,7 @@ summary(logit_random_intercept_and_slope)
 
 # Hierarchical modeling
 
-The argument `correlation =`allows you to specify the correlation structure in nlme.
+The argument `correlation =` allows you to specify the correlation structure in nlme.
 
 \tiny
 ```{r,out.width='40%'}
@@ -1776,6 +1862,8 @@ specified_variance_covariance_matrix_for_random_effects <- lme(mathach ~ 1
 
 
 ---
+
+
 # Hierarchical modeling
 
 

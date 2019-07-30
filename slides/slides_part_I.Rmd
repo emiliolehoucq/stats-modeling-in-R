@@ -866,13 +866,14 @@ summary(step_2)
 
 Each residual is plotted against its expected value under normality. Near linearity suggests normality.
 
-```{r,out.width='60%'}
+\tiny 
+
+```{r,out.width='70%'}
 std_res <- rstandard(ols_quadratic)
-qqnorm(std_res, 
-     ylab="Standardized Residuals", 
-     xlab="Normal Scores") 
+qqnorm(std_res, ylab="Standardized Residuals", xlab="Normal Scores") 
 qqline(std_res)
 ```
+\normalsize
 
 ---
 
@@ -929,7 +930,7 @@ bptest(ols_quadratic, studentize = FALSE)
 This procedure follows the recommendations of Kutner et al. (2005), Applied Linear Statistical Models.
 
 \tiny
-```{r,out.height='70%'}
+```{r,out.height='55%'}
 p <- 5 # numer of parameters
 case <- c(1:n) # n defined above
 plot(case, rstudent(ols_quadratic), type="l", xlab="Case Numbers", 
@@ -946,10 +947,11 @@ which(abs(rstudent(ols_quadratic)) >=crit ) # Here there's no evidence of outlyi
 
 ## Test for outlying X observations--hat matrix leverage values
 
+
 This procedure follows the recommendations of Kutner et al. (2005), Applied Linear Statistical Models.
 
 \tiny
-```{r,out.height='70%'}
+```{r,out.height='55%'}
 leverage <- hatvalues(ols_quadratic)
 plot(case, leverage, type="l", xlab="Case Numbers", 
      ylab="Leverage", main="Test for Outlying X Values")
@@ -966,10 +968,11 @@ leverage[X_out] # Here there's no outlying X observations
 ## Tests for influential observations
 ### Cook's distance
 
+
 Usually less than 10% or 20% indicates little influence on the fitted values. Near 50% or more indicates influence on the fit of the regression function.
 
 \tiny
-```{r,out.height='70%'}
+```{r,out.height='55%'}
 plot(case, cooks.distance(ols_quadratic), type="l", xlab="Case Numbers", 
      ylab="Cook's Distance", main = "Test for Influential Values: Cook's Distance")
 text(case, cooks.distance(ols_quadratic))
@@ -991,10 +994,11 @@ inf_obs
 
 ### DFFITS
 
+
 For small to medium-sized datasets, `abs(DFFITS)>1` indicates influence. The procedure below is for large datasets.
 
 \tiny
-```{r,out.height='70%'}
+```{r,out.height='60%'}
 plot(case, dffits(ols_quadratic), type="l", xlab="Case Numbers", 
      ylab="DFFITS", main = "Test for Influential Values: DFFITS")
 text(case, dffits(ols_quadratic))
@@ -1006,7 +1010,7 @@ text(case, dffits(ols_quadratic))
 ### DFFITS
 
 \tiny
-```{r,out.height='70%'}
+```{r,out.height='60%'}
 inf_obs2 <- which(abs(dffits(ols_quadratic))>2/sqrt(p/n))
 inf_obs2
 ```
