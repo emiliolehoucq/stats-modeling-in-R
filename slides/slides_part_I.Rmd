@@ -774,6 +774,9 @@ cbind(aic, bic, ar2)
 
 ## Step wise selection
 
+To use stepwise selection, you need to define a base model without predictors and a full model with all possible predictors to be considered. 
+If you want quadratic or interaction terms, you need to add them explicitely; otherwise, `.`adds all the variables in the dataset.
+
 \tiny
 ```{r}
 base <- lm(Sepal.Width ~ 1, data=data)
@@ -785,6 +788,8 @@ retailer_interaction <- lm(Sepal.Width ~ . + Sepal.Length*Species, data=data)
 ---
 
 ## Step wise selection
+
+Specifying `direction = "both"` selects step wise selection. If you're not interested in looking at the steps taken by the algorithm, you can select `trace = FALSE`.
 
 \small
 ```{r,results='hide'}
@@ -859,6 +864,8 @@ summary(step_2)
 
 ## Normal probability plot
 
+Each residual is plotted against its expected value under normality. Near linearity suggests normality.
+
 ```{r,out.width='60%'}
 std_res <- rstandard(ols_quadratic)
 qqnorm(std_res, 
@@ -871,6 +878,8 @@ qqline(std_res)
 
 ## Residual plots
 
+Under linearity and constant variance, this should appear as a random cloud of points centered at 0. As long as no residuals stand out from the others, the model fits all observations.
+
 ```{r,out.width='70%'}
 plot(res ~ pred, xlab="Fitted", ylab="Residual",
      main="Residual plot against fitted values")
@@ -881,6 +890,8 @@ abline(h=0)
 
 ## Residual plots
 
+Under linearity and constant variance, this should appear as a random cloud of points centered at 0.
+
 ```{r,out.width='70%'}
 plot(res ~ data$Sepal.Length, xlab="X", 
      ylab="Residual", main="Residual plot against X")
@@ -890,6 +901,8 @@ abline(h=0)
 ---
 
 ## Test for multicollinearity
+
+This procedure works for numerical variables. 
 
 ```{r}
 # See also function vif() in package "car"
@@ -902,6 +915,8 @@ VIF
 
 ## Test for heteroskedasticity
 
+This is the Breusch-Pagan test.
+
 ```{r}
 bptest(ols_quadratic, studentize = FALSE)
 ```
@@ -910,6 +925,8 @@ bptest(ols_quadratic, studentize = FALSE)
 
 
 ## Test for outlying Y observations--studentized deleted residual
+
+This procedure follows the recommendations of Kutner et al. (2005), Applied Linear Statistical Models.
 
 \tiny
 ```{r,out.height='70%'}
@@ -929,6 +946,8 @@ which(abs(rstudent(ols_quadratic)) >=crit ) # Here there's no evidence of outlyi
 
 ## Test for outlying X observations--hat matrix leverage values
 
+This procedure follows the recommendations of Kutner et al. (2005), Applied Linear Statistical Models.
+
 \tiny
 ```{r,out.height='70%'}
 leverage <- hatvalues(ols_quadratic)
@@ -946,6 +965,8 @@ leverage[X_out] # Here there's no outlying X observations
 
 ## Tests for influential observations
 ### Cook's distance
+
+Usually less than 10% or 20% indicates little influence on the fitted values. Near 50% or more indicates influence on the fit of the regression function.
 
 \tiny
 ```{r,out.height='70%'}
@@ -970,6 +991,8 @@ inf_obs
 
 ### DFFITS
 
+For small to medium-sized datasets, `abs(DFFITS)>1` indicates influence. The procedure below is for large datasets.
+
 \tiny
 ```{r,out.height='70%'}
 plot(case, dffits(ols_quadratic), type="l", xlab="Case Numbers", 
@@ -993,6 +1016,8 @@ inf_obs2
 ---
 
 ### DFBETAS
+
+For small to medium-sized datasets, `abs(DFBETAS)>1` indicates influence. The procedure below is for large datasets.
 
 \tiny
 ```{r,out.height='10%'}

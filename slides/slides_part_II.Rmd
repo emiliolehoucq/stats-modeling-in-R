@@ -1349,6 +1349,8 @@ Adding `art_relative:ment` to the independent model caused significant decrease 
 # Hierarchical modeling
 ## Data Wrangling
 
+Often you'll have to merge the different levels of data and center the predictors.
+
 ```{r}
 student_data <- read.csv("hsb1.csv")
 school_data  <- read.csv("hsb2.csv")
@@ -1366,6 +1368,8 @@ data <- merge(student_data, school_data, by = "id")
 
 # Hierarchical modeling
 ## Data Wrangling
+
+Above we grand-mean centered student SES and school SES, here we're group-mean centering student SES. Which one you use affects the interpretation of the intercept.
 
 ```{r}
 # Group-mean centered student SES
@@ -1385,6 +1389,9 @@ subset <- data[data$id%in%groups, ]
 
 
 # Hierarchical modeling
+
+Hierarchical models are in order!
+
 \tiny
 ```{r}
 xyplot(mathach ~ ses | as.factor(id), subset,
@@ -1397,6 +1404,8 @@ xyplot(mathach ~ ses | as.factor(id), subset,
 ---
 
 # Hierarchical modeling
+
+Smoothing instead of regression lines.
 
 \tiny
 ```{r}
@@ -1411,17 +1420,21 @@ xyplot(mathach ~ ses |as.factor(id), subset,
 ---
 
 # Hierarchical modeling
-  
+ 
+It's good practice to start with an unconditional model to have estimates of the variance. 
+ 
 \tiny
 ```{r}
 unconditional <- lmer(mathach ~ 1 + (1|id), data = data)
-summary(unconditional) # on p-values in nlme: https://stat.ethz.ch/pipermail/r-help/2006-May/094765.html
+summary(unconditional) # on p-values in lme4: https://stat.ethz.ch/pipermail/r-help/2006-May/094765.html
 ```
 \normalsize
 
 ---
 
 # Hierarchical modeling
+
+lme4 doesn't calculate p-values (see link above), but you can calculate approximate confidence intervals.
 
 ```{r}
 confint(unconditional) # you can also just calculate an approximate 95% confidence interval yourself: estimate +/- 2(SE) (in this case: 12.64 +/- 2(0.24))
@@ -1431,6 +1444,7 @@ confint(unconditional) # you can also just calculate an approximate 95% confiden
 
 # Hierarchical modeling
 
+We'll estimate the same models with `lmer()` (lme4) and `lme()`nlme.
 
 \tiny
 ```{r}
@@ -1444,6 +1458,7 @@ summary(unconditional_2)
 
 # Hierarchical modeling
 
+In `lmer()`, the random effects go in the parentheses. `1` stands, as in the usual formula syntax, for the intercept. The grouping variable goes after `|`in the parentheses as well.
 
 \tiny
 ```{r}
@@ -1469,6 +1484,7 @@ confint(random_intercept_fixed_slope)
 
 # Hierarchical modeling
 
+In `lme()`, the random effects go after `ramdom =`. Again, the `1`stands for the intercept and `|`goes before the grouping variable.
 
 \tiny
 ```{r}
@@ -1482,6 +1498,7 @@ summary(random_intercept_fixed_slope_2)
 
 # Hierarchical modeling
 
+Here we added a random slope for `groupmeanSES`
 
 \tiny
 ```{r, include=FALSE, messages=FALSE, warning=FALSE}
@@ -1497,6 +1514,7 @@ summary(random_intercept_random_slope)
 
 # Hierarchical modeling
 
+Here we added a random slope for `groupmeanSES`
 
 \tiny
 ```{r}
@@ -1512,6 +1530,7 @@ summary(random_intercept_random_slope_2)
 
 # Hierarchical modeling
 
+Here the `0`stands for no intercept, so we're leaving a fixed intercept.
 
 \tiny
 ```{r}
@@ -1525,6 +1544,7 @@ summary(fixed_intercept_random_slope)
 
 # Hierarchical modeling
 
+Again, the `0`stands for no intercept, so we're leaving a fixed intercept.
 
 \tiny
 ```{r}
@@ -1539,6 +1559,7 @@ summary(fixed_intercept_random_slope_2)
 
 # Hierarchical modeling
 
+Here we added another level-2 variable, `sm_ses_grandmean`, which stands for the grand-mean centered school SES. Since it's not in the parentheses, it's added as a fixed effect.
 
 \tiny
 ```{r}
@@ -1554,6 +1575,7 @@ summary(fixed_slope_level_two_variable)
 
 # Hierarchical modeling
 
+Again, we added another level-2 variable, `sm_ses_grandmean`, which stands for the grand-mean centered school SES. Since it's not after `random =`, it's added as a fixed effect.
 
 \tiny
 ```{r}
@@ -1569,6 +1591,7 @@ summary(fixed_slope_level_two_variable_2)
 
 # Hierarchical modeling
 
+Here we model `groupmeanSES`, the group-mean centered student SES, as a random effect by putting it inside the parentheses.
 
 \tiny
 ```{r,include=FALSE}
@@ -1589,7 +1612,7 @@ summary(random_slope_level_two_variable)
 
 # Hierarchical modeling
 
-
+Here we model `groupmeanSES`, the group-mean centered student SES, as a random effect by putting it after the `random =`.
 
 \tiny
 ```{r,out.width='70%'}
@@ -1619,6 +1642,7 @@ summary(random_slope_level_two_variable_2)
 
 # Hierarchical modeling
 
+Here we add a cross-level initeraction as a fixed effect.
 
 \tiny
 ```{r,out.width='60%'}
@@ -1634,6 +1658,7 @@ summary(fixed_slope_cl_interaction)
 
 # Hierarchical modeling
 
+Again, we add a cross-level interaction as a fixed effect.
 
 \tiny
 ```{r}
@@ -1647,6 +1672,7 @@ summary(fixed_slope_cl_interaction_2)
 
 # Hierarchical modeling
 
+Here we add the cross-level interaction as a random effect.
 
 \tiny
 ```{r}
@@ -1674,6 +1700,7 @@ summary(random_slope_cl_interaction)
 
 # Hierarchical modeling
 
+Again, we add the cross-level interaction as a random effect.
 
 \tiny
 ```{r,out.width='60%'}
@@ -1701,6 +1728,7 @@ summary(random_slope_cl_interaction_2)
 
 # Hierarchical modeling
 
+`glmer` is the function in lme4 to estimate generalized hierarchical linear models. In this case, we're estimating a logit model.
 
 \tiny
 ```{r,out.width='40%'}
@@ -1732,6 +1760,7 @@ summary(logit_random_intercept_and_slope)
 
 # Hierarchical modeling
 
+The argument `correlation =`allows you to specify the correlation structure in nlme.
 
 \tiny
 ```{r,out.width='40%'}

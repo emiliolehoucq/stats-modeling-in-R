@@ -51,4 +51,4 @@ See [Resources](https://github.com/nuitrcs/pythonworkshops/blob/master/resources
 
 [Survival Analysis Cheat Sheet](https://rpkgs.datanovia.com/survminer/survminer_cheatsheet.pdf): common models and steps
 
-[Hierarchical models](https://www.sree.org/courses/hlm/): modules on hierarchical linear models (extension module 4 is on R)
+[Hierarchical models](https://www.sree.org/courses/hlm/index.php?pID=5952&pE=distribution@sree.org): modules on hierarchical linear models (extension module 4 is on R)
