@@ -32,7 +32,7 @@ library(pscl, quietly = TRUE)
 A generalized linear model (GLM) has three components:
 
 - a random component with mean $\mu$. Generally, the random component is the response variable $Y_i.$
-- a systematic component, $\eta_i$, that relates the relates the explanatory variables,
+- a systematic component, $\eta_i$, that relates the explanatory variables,
 $$\eta_i = \sum_{j=i}^{n} \beta_j x_{ij}$$
 - a link function that relates the mean of the random to the systematic component
 $$g(\mu) = \eta_i$$
@@ -46,7 +46,7 @@ Logistic regression is a GLM used the model binary (0 or 1) data. The response v
 That said, logistic regression has the following components:
 
 -  a response binary variable, $Y_i$, that follows a bernoulli distribution with mean $\pi_i$.
-- a systematic component, $\eta_i$, that relates the relates the explanatory variables,
+- a systematic component, $\eta_i$, that relates the explanatory variables,
 $$\eta_i = \sum_{j=1}^{n} \beta_j x_{ij}$$
 - a link function that relates the mean of the random to the systematic component
 $$\log\left(\frac{\pi_i}{1-\pi_i}\right) = \sum_{j=i}^{n} \beta_j x_{ij}.$$ $\log\left(\pi_i/(1-\pi_i)\right)$ is known as the log odds.
@@ -308,7 +308,9 @@ points(data$Sepal.Length[data$Species == "virginica"],
 
 ### Deviance
 
- For general linear models, we use *deviance* to the compare to two different models. Deviance is the difference in log likelihood of the models multipled by 2.
+ For general linear models, we use *deviance* to compare model pairs. Deviance is the difference in log likelihood of the models multipled by 2.
+ 
+ For a linear model,  *deviance* is equivalent the sum of squares error of the residual.
  
 ---
  
@@ -321,7 +323,7 @@ points(data$Sepal.Length[data$Species == "virginica"],
 
 Using deviance, we can compare our fitted model to a saturated model. 
 
-If the fitted model is behaves similiar to the saturated model, then the deviance can be well approximated by a chi-squared distribution with $m-n$ degrees of freedom. $m$ is number of the data points and $n$ is number of coefficients in our fitted model.
+If the fitted model is behaves similiar to the saturated model, then the deviance can be well approximated by a chi-squared distribution with $m-n$ degrees of freedom. $m$ is the number of the data points and $n$ is the number of coefficients in our fitted model.
 
 ---
 
@@ -416,7 +418,7 @@ Since the p value is less than one, we reject our null hypothesis. (This is a go
 ## Goodness of Fit
 ### Anova 
 
-`anova` with argument `test="Chisq` allows us to compare change in deviance after sequencially adding terms our model.
+`anova` with argument `test="Chisq"` allows us to compare change in deviance after sequencially adding terms our model.
 
 \tiny
 
@@ -446,7 +448,7 @@ insert plot of poisson distribution here
 
 # Poisson Generalized Linear Model
 
-A possion GLM is most useful when studying data in which the mean and variable are approximately equal. If they are not not equal, the standard error of the model terms must adjusted to account for the assumption violation.
+A possion GLM is most useful when studying data in which the mean and variance are approximately equal. If they are not not equal, the standard error of the model terms must adjusted to account for the assumption violation.
 
 
 ---
@@ -456,7 +458,7 @@ A possion GLM is most useful when studying data in which the mean and variable a
 Poisson Regression has the following components:
 
 -  response count variables, $Y_i$, that follows a Possion distribution with mean $\mu_i$
-- a systematic component, $\eta_i$, that relates the relates the explanatory variables,
+- a systematic component, $\eta_i$, that relates the explanatory variables,
 $\eta_i = \sum_{j=1}^{n} \beta_j x_{ij}$
 - a link function, $log(\mu_i) = \sum_{j=1}^{n} \beta_j x_{ij}$
 
@@ -485,7 +487,7 @@ summary(bioChemists)
 # Poisson Generalized Linear Model
 ## Data
 
- The data set also contains demographic data associated with each student.  data of the flower of certain plant species. The data set has five variables:
+ The data set also contains demographic data associated with each student. The data set has five variables:
 
 - *art* - number of articles produced by the student in the last 3 years of their PhD
 - *fem* - gender
@@ -518,7 +520,7 @@ bioChemists$kid5 <- factor(bioChemists$kid5,
 # Poisson Generalized Linear Model
 ## Data Visualization
 
-Plotting the bar graph of `bioChemists$art`, we can see than the data looks Poisson-like since there is large number of observations at 0.
+Plotting the bar graph of `bioChemists$art`, we can see that the data looks Poisson-like since there is a large number of observations at 0.
 \tiny
 
 ```{r,out.width='80%',echo=FALSE}
@@ -731,13 +733,23 @@ summary(poisson_model)
 
 
 ```{r,out.width='70%',echo=FALSE}
-plot(bioChemists$art,ylab='number of articles',xlab = 'Index', main="Articles distribution for single students")
+
 single_bioChemists = bioChemists[bioChemists$mar=='Single',]
 
-points(poisson_model$fitted[single_bioChemists$kid5== 0],col="blue",pch=1)
-points(poisson_model$fitted[single_bioChemists$kid5== 1],col="yellow",pch=1)
-points(poisson_model$fitted[single_bioChemists$kid5== 2],col="red",pch=1)
-points(poisson_model$fitted[single_bioChemists$kid5== 3],col="green",pch=1)
+plot(as.numeric(row.names(single_bioChemists)),single_bioChemists$art,ylab='number of articles',xlab = 'Index', main="Articles distribution for single students")
+
+poisson_model_single_data = poisson_model$fitted[bioChemists$mar=='Single']
+
+points(as.numeric(row.names(data.frame(poisson_model_single_data[single_bioChemists$kid5== 0]))),
+       poisson_model_single_data[single_bioChemists$kid5== 0],col="blue",pch=1)
+
+points(as.numeric(row.names(data.frame(poisson_model_single_data[single_bioChemists$kid5== 1]))),
+       poisson_model_single_data[single_bioChemists$kid5== 1],col="yellow",pch=1)
+
+points(as.numeric(row.names(data.frame(poisson_model_single_data[single_bioChemists$kid5== 2]))),
+       poisson_model_single_data[single_bioChemists$kid5== 2],col="red",pch=1)
+points(as.numeric(row.names(data.frame(poisson_model_single_data[single_bioChemists$kid5== 3]))),
+       poisson_model_single_data[single_bioChemists$kid5== 3],col="green",pch=1)
 ```
 \normalsize
 
@@ -748,13 +760,26 @@ points(poisson_model$fitted[single_bioChemists$kid5== 3],col="green",pch=1)
 \tiny
 
 ```{r,out.width='70%',echo=FALSE}
-plot(bioChemists$art,ylab='number of articles',xlab = 'Index',main="Articles distribution for Married students")
+
 mar_bioChemists = bioChemists[bioChemists$mar=='Married',]
 
-points(poisson_model$fitted[mar_bioChemists$kid5== 0],col="blue",pch=2)
-points(poisson_model$fitted[mar_bioChemists$kid5== 1],col="yellow",pch=2)
-points(poisson_model$fitted[mar_bioChemists$kid5== 2],col="red",pch=2)
-points(poisson_model$fitted[mar_bioChemists$kid5== 3],col="green",pch=2)
+plot(as.numeric(row.names(mar_bioChemists)),
+     mar_bioChemists$art,ylab='number of articles',xlab = 'Index', main="Articles distribution for married students")
+
+poisson_model_married_data = poisson_model$fitted[bioChemists$mar=='Married']
+
+points(as.numeric(row.names(data.frame(poisson_model_married_data[mar_bioChemists$kid5== 0]))),
+       poisson_model_married_data[mar_bioChemists$kid5== 0],
+       col="blue",pch=2)
+points(as.numeric(row.names(data.frame(poisson_model_married_data[mar_bioChemists$kid5== 1]))),
+       poisson_model_married_data[mar_bioChemists$kid5== 1],
+       col="yellow",pch=2)
+points(as.numeric(row.names(data.frame(poisson_model_married_data[mar_bioChemists$kid5== 2]))),
+       poisson_model_married_data[mar_bioChemists$kid5== 2],
+       col="red",pch=2)
+points(as.numeric(row.names(data.frame(poisson_model_married_data[mar_bioChemists$kid5== 3]))),
+       poisson_model_married_data[mar_bioChemists$kid5== 3],
+       col="green",pch=2)
 ```
 
 Graphically, we can see than that martial status and number of children is not good indicator of number articles published.
@@ -901,21 +926,52 @@ anova(poisson_model,test="Chisq")
 
 # Log-Linear Regression
 
-Log-linear models allow us to model asscociation between between two or more variables in contingency table. In a log-linear model, there are no well defined explanatory/response variables. This is because we are focused more on the *interaction* between two variables.
+Contingency table displays number of observations for a given combination of factors.
+
+```{r,echo=FALSE, results='asis'}
+library(knitr)
+art_binary <- sapply(bioChemists$art,
+                                 function(x) ifelse(x > 1, 1, 0))
+ment_binary <- sapply(bioChemists$ment,
+                                  function(x) 
+                                    ifelse(x > median(bioChemists$ment),
+                                           1, 0))
+
+bioChemists$art_binary <- factor(art_binary, levels=c(0,1),label=c("low articles  published","high articles published"))
+bioChemists$ment_binary <- factor(ment_binary, levels=c(0,1),label=c("low mentor articles ","high mentor articles"))
+kable(table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary))
+
+```
+
+\pause{Log-linear model to model the group mean count of each cell of the contingency table} 
+
+\pause{Log-linear models allow us to model association between two or more variables.}
+
+\pause{There are no well defined explanatory/response variables. This is because we are more focused on the interaction between two variables.}
+
 
 ---
 
 # Log-Linear Regression
 ## Contingency Table
 
-Contingency table displays number of observations for a given combination of factors.
+Contingency table displays number of observations for all combinations of levels of given discrete variables.
 
-This definition is best represented by an example. 
+We would like to learn a contigency table for the `biochemist` data set using number of articles published, number of mentor articles published and number of children.
 
-```{r,echo=FALSE}
-bioChemists$art_binary <- sapply(bioChemists$art,function(x) ifelse(x > 1, 1, 0))
-bioChemists$ment_binary <- sapply(bioChemists$ment,function(x) ifelse(x > median(bioChemists$ment), 1, 0))
+First, we discretize our continuous variables.
+
+\tiny
+```{r}
+bioChemists$art_binary <- sapply(bioChemists$art,
+                                 function(x) ifelse(x > 1, 1, 0))
+bioChemists$ment_binary <- sapply(bioChemists$ment,
+                                  function(x) 
+                                    ifelse(x > median(bioChemists$ment),
+                                           1, 0))
 ```
+\normalsize
+
 
 ---
 
@@ -1005,14 +1061,14 @@ This three-way contigency table shows that:
 ---
 
 ## Log-linear Regression for two way contingency table
-
 For a two-way contingency table, log-linear GLMs have the following components:
 
-- count response variables, $Y_{ij}$, which is the number of entries in the (i,j)th cell of the table. $Y_{ij}$ follows a Possion distribution with mean $\mu_{ij}$.
-- a systematic component, $\eta_i$, that relates the relates the explanatory variables,
-$$\eta_{ij} = \sum_{j=1}^{n} \beta_{k} X_{ijk}$$
-- a link function that relates the mean of the random to the systematic component
-$$\log \mu_{ij} = \sum_{k=1}^{n}\beta_{k} X_{ijk}$$
+- count response variables, $Y_{ij}$, which is the number of entries in the (i,j)th cell of the table. $Y_{ij}$ follows a Possion distribution with mean $\mu_{ij}$
+- \pause{a systematic component, $\eta_{ij}$, that relates the explanatory variables,
+$$\eta_{ij} = \beta_0+ \sum_{k=1}^{n} \sum_{i=1}^{m-1} \beta_{ki} X_{ki}$$
+where $n$ is the number of covariates, $m$ is the number of covariate class of $X_{k}$ and $X_{ki}$ is the total number of observations with $i$th covariate class of $X_{k}$}
+-  \pause{a link function that relates the mean of the random to the systematic component
+$$\log \mu_{ij} =\beta_0 + \sum_{k=1}^{n} \sum_{i=1}^{m-1} \beta_{ki} X_{ki}$$}
 
 
 ---
@@ -1020,7 +1076,7 @@ $$\log \mu_{ij} = \sum_{k=1}^{n}\beta_{k} X_{ijk}$$
 
 ## Independent Model for two-way contigency table
 
-We use log-linear model to model the group mean count of each cell of the contingency table. Remember, using a log-linear model, our primary goal is to learn the interaction effects between covariates.  
+Remember, using a log-linear model, our primary goal is to learn the interaction effects between covariates.  
 
 Again, we build the same two-way contingency table. We need to convert the contigency table in a form that is acceptable to `glm`. 
 
@@ -1274,12 +1330,425 @@ From `anova`, we can see that the saturated model provides a statisically signif
 ##  Model Comparison
 
 We use also `anova` to determine what caused the significant decrease in the deviance.
-
 \tiny
 ```{r,out.width='40%'}
 anova(log_linear_model_sat,test='Chisq')
 ```
 \normalsize
-
-
 Adding `art_relative:ment` to the independent model caused significant decrease in deviance.
+
+
+---
+
+# Hierarchical modeling
+## Data Wrangling
+
+```{r}
+student_data <- read.csv("hsb1.csv")
+school_data  <- read.csv("hsb2.csv")
+student_data$ses_grandmean <- student_data$ses -
+  mean(student_data$ses) # Grand-mean centered student SES 
+school_data$sm_ses_grandmean <- school_data$meanses - 
+  mean(school_data$meanses) # Grand-mean centered school SES
+```
+
+```{r}
+data <- merge(student_data, school_data, by = "id")
+```
+
+---
+
+# Hierarchical modeling
+## Data Wrangling
+
+```{r}
+# Group-mean centered student SES
+ses_group_mean <- aggregate(data$ses, list(data$id), 
+                            FUN = mean, data = data) 
+
+names(ses_group_mean)<- c('id','groupmeanSES')
+data <- merge(data, ses_group_mean, by = "id")
+```
+
+```{r}
+groups <- unique(data$id)[sample(1:160,20)]
+subset <- data[data$id%in%groups, ]
+```
+
+---
+
+
+# Hierarchical modeling
+\tiny
+```{r}
+xyplot(mathach ~ ses | as.factor(id), subset,
+       col.line = 'black',
+       type = c("p", "r"),
+       main = 'Variability in Math Achievement ~ SES Relationship')
+```  
+\normalsize
+
+---
+
+# Hierarchical modeling
+
+\tiny
+```{r}
+xyplot(mathach ~ ses |as.factor(id), subset,
+                        col.line = 'black',
+                        type = c("p", "smooth"),
+                        main = 'Variability in Math Achievement ~ SES Relationship')
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+  
+\tiny
+```{r}
+unconditional <- lmer(mathach ~ 1 + (1|id), data = data)
+summary(unconditional) # on p-values in nlme: https://stat.ethz.ch/pipermail/r-help/2006-May/094765.html
+```
+\normalsize
+
+---
+
+# Hierarchical modeling
+
+```{r}
+confint(unconditional) # you can also just calculate an approximate 95% confidence interval yourself: estimate +/- 2(SE) (in this case: 12.64 +/- 2(0.24))
+```
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+unconditional_2 <- lme(mathach ~ 1, random = ~ 1 | id, data = data)
+summary(unconditional_2)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+random_intercept_fixed_slope <- lmer(mathach ~ 1 + groupmeanSES + (1|id), data = data)
+summary(random_intercept_fixed_slope)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+confint(random_intercept_fixed_slope)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+random_intercept_fixed_slope_2 <- lme(mathach ~ 1 + groupmeanSES, random = ~ 1 | id, data = data)
+summary(random_intercept_fixed_slope_2)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r, include=FALSE, messages=FALSE, warning=FALSE}
+random_intercept_random_slope <- lmer(mathach ~ 1 + groupmeanSES + (1 + groupmeanSES|id), data = data)
+```
+```{r,out.width='80%'}
+summary(random_intercept_random_slope)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+random_intercept_random_slope_2 <- lme(mathach ~ 1 + groupmeanSES, 
+                                       random = ~ 1 + groupmeanSES | id,
+                                       data = data)
+summary(random_intercept_random_slope_2)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+fixed_intercept_random_slope <- lmer(mathach ~ 1 + groupmeanSES + (0 + groupmeanSES|id), data = data)
+summary(fixed_intercept_random_slope)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+fixed_intercept_random_slope_2 <- lme(mathach ~ 1 + groupmeanSES,
+                                      random = ~ 0 + groupmeanSES | id, data = data)
+summary(fixed_intercept_random_slope_2)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+fixed_slope_level_two_variable <- lmer(mathach ~ 1 + groupmeanSES 
+                                       + sm_ses_grandmean + (1|id),
+                                       data = data)
+summary(fixed_slope_level_two_variable)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+fixed_slope_level_two_variable_2 <- lme(mathach ~ 1 + groupmeanSES 
+                                        + sm_ses_grandmean,
+                                        random = ~ 1 | id, data = data)
+summary(fixed_slope_level_two_variable_2)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r,include=FALSE}
+random_slope_level_two_variable <- lmer(mathach ~ 1 + groupmeanSES 
+                                        + sm_ses_grandmean 
+                                        + (1 + groupmeanSES|id),
+                                        data = data)
+```
+
+```{r,out.width='70%'}
+summary(random_slope_level_two_variable)
+```
+\normalsize
+
+
+
+---
+
+# Hierarchical modeling
+
+
+
+\tiny
+```{r,out.width='70%'}
+random_slope_level_two_variable_2 <- lme(mathach ~ 1 + groupmeanSES 
+                                         + sm_ses_grandmean, 
+                                         random = ~ 1 + groupmeanSES | id,
+                                         data = data)
+
+```
+\normalsize
+
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r,out.width='70%'}
+summary(random_slope_level_two_variable_2)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r,out.width='60%'}
+fixed_slope_cl_interaction <- lmer(mathach ~ 1 + groupmeanSES*sm_ses_grandmean 
+                                   + (1|id), data = data)
+summary(fixed_slope_cl_interaction)
+```
+\normalsize
+
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+fixed_slope_cl_interaction_2 <- lme(mathach ~ 1 + groupmeanSES*sm_ses_grandmean,
+                                    random = ~ 1 | id, data = data)
+summary(fixed_slope_cl_interaction_2)
+```
+\normalsize
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r}
+random_slope_cl_interaction <- lmer(mathach ~ 1 + groupmeanSES*sm_ses_grandmean 
+                                    + (1 + groupmeanSES|id), data = data)
+```
+
+
+\normalsize
+
+---
+
+
+# Hierarchical modeling
+
+
+\tiny
+```{r,out.width='60%'}
+summary(random_slope_cl_interaction)
+```
+\normalsize
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r,out.width='60%'}
+random_slope_cl_interaction_2 <- lme(mathach ~ 1 + groupmeanSES*sm_ses_grandmean,
+                                     random = ~ 1 + groupmeanSES | id, 
+                                     data = data)
+```
+\normalsize
+
+---
+
+
+# Hierarchical modeling
+
+
+\tiny
+```{r,out.width='60%'}
+summary(random_slope_cl_interaction_2)
+```
+\normalsize
+
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r,out.width='40%'}
+logit_random_intercept_and_slope <- glmer(minority ~ groupmeanSES + 
+                                            (1 + groupmeanSES | id),
+                                          data = data, family = binomial(link="logit"))
+```
+
+\normalsize
+
+
+---
+
+
+
+# Hierarchical modeling
+
+\tiny
+
+```{r,out.width='40%'}
+summary(logit_random_intercept_and_slope)
+```
+
+\normalsize
+
+
+
+---
+
+# Hierarchical modeling
+
+
+\tiny
+```{r,out.width='40%'}
+specified_variance_covariance_matrix_for_random_effects <- lme(mathach ~ 1
+                                                               +groupmeanSES*sm_ses_grandmean,
+                                                               random = ~ 1 + groupmeanSES | id, 
+                                                               correlation = corAR1(), 
+                                                               data = data) 
+
+# just an example, not needed in this case (useful for growth curve models)!
+```
+\normalsize
+
+
+---
+# Hierarchical modeling
+
+
+\tiny
+
+```{r,out.height='40%'}
+summary(specified_variance_covariance_matrix_for_random_effects)
+```
+
+\normalsize
+

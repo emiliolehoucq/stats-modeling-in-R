@@ -41,11 +41,11 @@ $S(t)$ is probability that death has not occurred until after time, $t$.
 
 - $\lambda(t)$: the hazard function. 
 \begin{align*}
-\lambda(t) &= \frac{\text{probability of dying in at time, } t}{\text{probability of survival until time, } t} \\
+\lambda(t) &= \frac{\text{probability of dying at time, } t}{\text{probability of survival until time, } t} \\
 &\approx \frac{\text{number of people who died at time, } t}{\text{number of people who lived until time, } t}
 \end{align*}
 
-$\lambda(t)$ measures the likelihood of death in a very small time interval, $t$ and $t+dt$. It is a measure of *risk*.
+$\lambda(t)$ is a measure of *risk*.
 
 - $\Lambda(t)$: the cumulative hazard. It is total hazard from $0$ to time, $t$.
 
@@ -70,11 +70,11 @@ $$ S(t) =\exp\left(-\Lambda(t)\right) = \exp\left(-\int_0^t \lambda(t)\, dt\righ
 
 Like most models, survival models suceptible to imperfect data. Let's say a subject is recorded for a study up until a time, $t^{\ast}$. 
 
-After time $t^{\ast}$, the subject may decide not to continue with study or it is not possible to locate the subject. Many things could have caused a lack of follow up. This subject is called *censored*. 
+\pause{After time $t^{\ast}$, the subject may decide not to continue with study or it is not possible to locate the subject. This subject is called *censored*. Many things could have caused a lack of follow up. }
 
-While it maybe reasonable to discard this data point, the censored data actually contains information that we know the event has not occurred prior to $t^{\ast}.$ 
+\pause{While it maybe reasonable to discard this data point, the censored data actually contains useful information. We know the event has not occurred prior to $t^{\ast}.$ }
 
-This gives more information to our model about  time prior to $t^{\ast}$ than if we were to discard the censored data.
+\pause{This gives more information to our model about  time prior to $t^{\ast}$ than if we were to discard the censored data.}
 
 ---
 
@@ -117,14 +117,11 @@ The `colon` dataset has the following columns:
 
 ## Description 
 
-\tiny
 
-```{r,out.width='30%'}
+```{r}
 attach(colon)
 head(colon)
 ```
-
-\normalsize
 
 ----
 
@@ -374,7 +371,7 @@ print(p_value)
 
 ##  Kalpan-Meier Estimator for the data divided into adhere and no adhere
 
-`colon_subset_recurrence` can be divided two data sets by the `adhere` column. Those patients whose colons are obstructed by the tumour and those whose colons aren't. We can fit to each data partition to a Kalpan-Meier Estimator
+`colon_subset_recurrence` can also be divided two data sets by the `adhere` column. We can fit to each data partition to a Kalpan-Meier Estimator
 $$\hat{S}_{\text{adhere}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{adhere}}} \left (1-\frac{d_i}{n_i}\right)$$
 
 $$\hat{S}_{\text{no adhere}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{no adhere}}} \left(1-\frac{d_i}{n_i}\right) .$$
@@ -434,7 +431,7 @@ survdiff(surv~adhere,data=colon_subset_recurrence)
 
 \tiny
 
-`colon_subset_recurrence` can be divided in any amount by the explanatory variables Let's consider breaking up the data based on a patient's obstruction and adherence status.
+`colon_subset_recurrence` can be divided in any amount by the discrete explanatory variables. Let's consider breaking up the data based on a patient's obstruction and adherence status.
 
 We can fit to each data partition to a Kalpan-Meier Estimator
 $$\hat{S}_{\text{adhere}, \text{obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{adhere}\\ \text{obstruct}_i = \text{ obstruct}}} \left (1-\frac{d_i}{n_i}\right), \, \, \, \, \, \, \, \, \hat{S}_{\text{no adhere}, \text{obstruct}}(t) = \prod_{\substack{\text{for }i:\, t_i \leq t\\ \text{adher}_i = \text{no adhere}\\ \text{obstruct}_i = \text{ obstruct}}} \left (1-\frac{d_i}{n_i}\right)$$
@@ -956,7 +953,7 @@ From our definitions of terms and with some probability theory (not covered), th
 $$\lambda_i(t) = \lambda \gamma t^{\gamma -1} \exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right).$$
 $$\text{and  } S_i(t) = \exp\left(\beta_1 X_{1i} + \cdots + \beta_n X_{ni}\right)S_{0}(t), \, \, S_{0}(t) = \exp(-(\lambda t)^{\gamma}).$$
 
-As proportional hazard model, Weibull accelerated failure time models assumes that the baseline hazard is constant, $\lambda \gamma t^{\gamma -1}$. One can see that exponential accelerated failure time models are a special case of Weibull accelerated failure time models with $\gamma = 1$.
+As proportional hazard model, Weibull accelerated failure time models assumes that the baseline hazard is  $\lambda \gamma t^{\gamma -1}$. One can see that exponential accelerated failure time models are a special case of Weibull accelerated failure time models with $\gamma = 1$.
 
 ---
 
