@@ -943,7 +943,7 @@ kable(table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary))
 
 ```
 
-\pause{Log-linear model to model the group mean count of each cell of the contingency table} 
+\pause{Log-linear model model the group mean count of each cell of the contingency table} 
 
 \pause{Log-linear models allow us to model association between two or more variables.}
 
@@ -1057,22 +1057,8 @@ This three-way contigency table shows that:
     * there are 128 biochemists with 1 or less papers and with a mentor that produced more than 6 papers
     * there are 116 biochemists with more than 1 paper and with a mentor that produced less than or equal to 6 papers
     * there are 147 biochemists with more than 1 paper and with a mentor that produced more than 6 papers
-    
----
-
-## Log-linear Regression for two way contingency table
-For a two-way contingency table, log-linear GLMs have the following components:
-
-- count response variables, $Y_{ij}$, which is the number of entries in the (i,j)th cell of the table. $Y_{ij}$ follows a Possion distribution with mean $\mu_{ij}$
-- \pause{a systematic component, $\eta_{ij}$, that relates the explanatory variables,
-$$\eta_{ij} = \beta_0+ \sum_{k=1}^{n} \sum_{i=1}^{m-1} \beta_{ki} X_{ki}$$
-where $n$ is the number of covariates, $m$ is the number of covariate class of $X_{k}$ and $X_{ki}$ is the total number of observations with $i$th covariate class of $X_{k}$}
--  \pause{a link function that relates the mean of the random to the systematic component
-$$\log \mu_{ij} =\beta_0 + \sum_{k=1}^{n} \sum_{i=1}^{m-1} \beta_{ki} X_{ki}$$}
-
 
 ---
-
 
 ## Independent Model for two-way contigency table
 
@@ -1122,6 +1108,26 @@ summary(log_linear_model_int)
 \normalsize
 
 ---
+
+## Independent Model for two-way contigency table
+
+```{r}
+log_linear_model_int$coefficients
+```
+
+
+\begin{center}
+\begin{tabular}{ |c|c|c| } 
+ \hline
+  & mentor article : 0 & mentor article : 1 \\\hline
+ student article : 0 & $\exp(5.64)$ & $\exp(5.64-0.15)$ \\\hline
+ mentor article : 1 & $\exp(5.64-0.26-0.15)$ & $\exp(5.63-0.27-0.15)$ \\\hline
+ \hline
+\end{tabular}
+\end{center}
+
+---
+
 
 ## Independent Model for two-way contigency table
 ### Goodness of fit
