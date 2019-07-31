@@ -58,9 +58,9 @@
 
 23. Ensure that all the covariates are of the right class
 
-24. Using Poisson regression, model the number of siezures against the treatment, age and period
+24. Using Poisson regression, model the number of seizures against the treatment, age and period
 
-25. Using Poisson regression, model the number of siezures against the interaction of all three covariates, treatment, age and period
+25. Using Poisson regression, model the number of seizures against the interaction of all three covariates, treatment, age and period
 
 26. Using `anova`, what can you say about the iteration factors?
 
@@ -72,7 +72,7 @@
 
 ## Log-Linear Regression
 
-30. Load the colon data set from the `survival` package. Subset the data set for those whose cancer recurred. Store this subset in `colon_subset_recurrence`.
+30. Load the colon data set from the `survival` package. Run the command `?colon` to learn more about the data set. Subset the data set for those whose cancer recurred. Store this subset in `colon_subset_recurrence`.
 
 31. Add a new column to `colon_subset_recurrence` called `time.dichotomize` which classifies if the observed time was greater or less than the median
 
@@ -103,13 +103,13 @@ Note: For the next exercises, recode education as a three-level factor (0 for no
 
 # Part III
 
-42. Load the myeloma data set from `survminer` package
+42. Load the myeloma data set from `survminer` package. Run the command `?myeloma`  to learn more about the data set.
 
-43. The `event` tell us  whether someone has died at the last known time the patient seen. This is our censored colomn. Create a Surv object, `surv`, with the censor status and time of event.
+43. The `event` covariate tell us  whether someone has died at the last known time the patient seen. This is our censored colon. Create a Surv object, `surv`, with the censor status and time of event.
 
 ## Kaplan-Meier
 
-44. Create and plot a Kaplan-Meier estimator the entire dataset.
+44. Create and plot a Kaplan-Meier estimator of the entire dataset. 
 
 45. Create and plot a Kaplan-Meier estimator as function of `molecular_group` the entire dataset. 
 

@@ -66,7 +66,7 @@ stat.desc(data$Sepal.Width)
 ## Basic Statistical Analysis 
 ### Descriptive statistics by groups 
 
-Using `tapply`, we compute the same descriptive statistics above but grouped species with the same sepal width. `tapply` takes
+Using `tapply`, we compute the same descriptive statistics above but with grouped species of the same sepal width. `tapply` takes
 
 - *first argument*: the input data to which we will apply the statistical function 
 - *second argument*: the grouping data which tells the statistical function how to group the input data
@@ -98,7 +98,7 @@ head(round(cbind(mean, standard_deviation, number_of_observations), digits = 6))
 ## Basic Data Visualization
 ### Histogram
 
-It is important get an idea of the "structure" of your data. To do this, we can use histograms. We use the `hist` function to plot a distribution of sepal width.
+It is important to get an idea of the "structure" of your data. To do this, we can use histograms. We use the `hist` function to plot a distribution of sepal width.
 
 ```{r,out.width = '50%'}
 hist(data$Sepal.Width,
@@ -110,7 +110,9 @@ hist(data$Sepal.Width,
 ---
 
 ### Scatter Plot
+
 We use the `plot` function to create a scatter plot of sepal length vs sepal width.
+
 ```{r,out.width = '50%'}
 plot(data$Sepal.Length, data$Sepal.Width,
      xlab='Sepal length', ylab='Sepal Width',
@@ -131,7 +133,7 @@ First, we call `plot` to create a canvas with an set of points associated with S
 ## Basic Data Visualization
 ### Stacking plots (without ggplot2)
 
-Rather, we call `points` to add scatter plots to existing plot. `points` does not clear the previous plot.
+Rather, we call `points` to add scatter plots to the existing plot. `points` does not clear the previous plot.
  
 \tiny
 ```{r,out.width = '40%'}
@@ -158,11 +160,11 @@ points(data[data$Species == "virginica", ]$Sepal.Length,
 ## Basic Data Visualization
 ### Scatter plot matrix
 
-It is quite cumbersome to call to `plot` multiple times to create scatter plots for various pairs of explanatory variables. 
+It is quite cumbersome to call `plot` multiple times to create scatter plots for various pairs of explanatory variables. 
 
-There exists a convience function, `pairs`, that will create a matrix of scatter plots for all possible explanatory variable combination.
+There exists a convenience function, `pairs`, that will create a matrix of scatter plots for all possible explanatory variable combinations.
 
-We give the `pairs` the first four columns of `data`. It will create a scatter plot matrix for sepal length, sepal width, petal length and petal width.
+We give the `pairs` the first four columns of `data`. It will create a scatter plot matrix for sepal length, sepal width, petal length, and petal width.
 
 
 ---
@@ -197,9 +199,9 @@ Given a response variable, $y$, explanatory variables, $X_i$, and assuming that
 
 $$ y_i = \beta_0 +\beta_1 X_{1i} + \beta_2 X_{2i} + \cdots + \beta_n X_{ni} +\varepsilon$$
 
-where $\varepsilon$ is a noise term, linear regression attempts the find the coefficients $\beta_i$ that makes $\varepsilon$ as small as possible.
+where $\varepsilon$ is a noise term, linear regression attempts to find the coefficients $\beta_i$ that makes $\varepsilon$ as small as possible.
 
-The formula above assumes that response variable is a linear function explanatory variables. The noise term is added to account for the fact that most data is noisy and will not perfectly fit its 'true' function. 
+The formula above assumes that response variable is a linear function of explanatory variables. The noise term is added to account for the fact that most data is noisy and will not perfectly fit its 'true' function. 
 
 Linear regression also assumes that the noise is normally distributed with zero mean. 
 
@@ -221,7 +223,7 @@ If these two assumptions are violated then
 
 To regress the response variable, `Sepal.Width`, with explanatory variables, `Sepal.Length`, `Species`, `Petal.Length` and `Petal.Width`, we use the `lm` function.
 
-The first argument is `lm` is the formula. The name of the column of the response variable is written first. It is followed by a tilde, `~`. After the tilde, we write names of the explanatory variable each separated by a `+`. `1` can also be added to the formula to represent a constant term.
+The first argument of `lm` is the formula. The name of the column of the response variable is written first. It is followed by a tilde, `~`. After the tilde, we write names of the explanatory variable each separated by a `+`. `1` can also be added to the formula to represent a constant term.
 
 
 ---
@@ -411,7 +413,7 @@ abline(coefs[4] +coefs[1],coefs[2],col='blue')
 ## Linear regression syntax
 ### Advanced Syntax: Nonlinear Regression
 
-The `lm` function can be extended to nonlinear functions. For example, it possible include a quadratic term in our model.
+The `lm` function can be extended to nonlinear functions. For example, it is possible include a quadratic term in our model.
 
 $$\text{Sepal.Width} = \beta_1\text{Sepal.Length} + \beta_2\text{Sepal.Length}^2  + \varepsilon$$
 
@@ -543,7 +545,7 @@ head(data.frame(pred=pred,orig=data$Sepal.Width ))
 
 ## Obtaining the ANOVA table
 
-`anova` allows us to compare variance in the response captured by residuals and each term in the model. 
+`anova` allows us to compare the variance in residuals to explained variance of sequentially built models. 
 
 \small
 ```{r}
@@ -557,7 +559,7 @@ anova(ols)
 
 Covariance measures how well two variables vary together.
 
-For an linear model, variance-covariance matrix is described by: 
+For an linear model, variance-covariance matrix is an array in which the 
 
 -  $(i,j)$ entry is the covariance between the $i$th coefficent and the $j$ coefficient.
 -  $(i,i)$ entry is the variance for the $i$th coefficent.
@@ -592,7 +594,7 @@ kable(vcov_mat)
 
 ## Obtaining confidence intervals for the coefficients
 
-We can use the `confint` to term the confidence interval of the coefficients of our linear model. The `level` argument specifies the percentage confidence.
+We can use the `confint` to return the confidence interval of the coefficients of our linear model. The `level` argument specifies the percentage of confidence.
 
 ```{r}
 confint(ols, level = 0.95)
@@ -662,11 +664,11 @@ band
 
 ## Standardized regression
 
-It is difficult to compare size coefficients if the measurement units of the covariates differ widely. 
+It is difficult to compare coefficients if the measurement units of the covariates differ widely. 
 
-Standardization removed the scale of the covariates. Standardization substracts the mean and divides by the standard deviation.
+Standardization removes the scale of the covariates. From each covariate column, standardization subtracts the mean and divides by the standard deviation.
 
-To standardize our model, we convert the unstandardize model to a standard model using `lm.beta`. 
+To standardize our model, we convert the unstandardize model to a standarduzed model using `lm.beta`. 
 
 ---
 

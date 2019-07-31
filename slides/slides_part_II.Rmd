@@ -6,7 +6,7 @@ output:
 
 # Load Packages 
 
-Again, we must load the packages that will be used in the first part of this workshop.
+Again, we must load the packages that will be used in the second part of this workshop.
 
 
 ```{r, message=FALSE, warning=FALSE }
@@ -41,11 +41,11 @@ $$g(\mu) = \eta_i$$
 
 # Logistic regression
 
-Logistic regression is a GLM used the model binary (0 or 1) data. The response variable must be binary and is assumed to follow a bernoulli distribution. 
+Logistic regression is a GLM used to model binary (0 or 1) data. The response variable must be binary and is assumed to follow a Bernoulli distribution. 
 
 That said, logistic regression has the following components:
 
--  a response binary variable, $Y_i$, that follows a bernoulli distribution with mean $\pi_i$.
+-  a response binary variable, $Y_i$, that follows a Bernoulli distribution with mean $\pi_i$.
 - a systematic component, $\eta_i$, that relates the explanatory variables,
 $$\eta_i = \sum_{j=1}^{n} \beta_j x_{ij}$$
 - a link function that relates the mean of the random to the systematic component
@@ -158,16 +158,6 @@ print(c(coefficients[1],coefficients[1]+coefficients[2],
 \normalsize
 
 ---
-
-
-# Logistic regression
-## Logistic Regression with continuous variable
-
-COMPLETE 
-
-
----
-
 
 # Logistic regression
 ## Logistic Regression with continuous variable, Sepal.Length
@@ -308,7 +298,7 @@ points(data$Sepal.Length[data$Species == "virginica"],
 
 ### Deviance
 
- For general linear models, we use *deviance* to compare model pairs. Deviance is the difference in log likelihood of the models multipled by 2.
+ For general linear models, we use *deviance* to compare model pairs. Deviance is the difference in log likelihood of the models multiples by 2.
  
  For a linear model,  *deviance* is equivalent the sum of squares error of the residual.
  
@@ -319,11 +309,11 @@ points(data$Sepal.Length[data$Species == "virginica"],
 ### Saturated Model
 
 
- Let's consider model in which each data point has its own mean and coefficients. This is called the saturated model. It basically replicates the data at hand. 
+ Let's consider the model in which each data point has its own mean and coefficients. This is called the saturated model. It basically replicates the data at hand. 
 
 Using deviance, we can compare our fitted model to a saturated model. 
 
-If the fitted model is behaves similiar to the saturated model, then the deviance can be well approximated by a chi-squared distribution with $m-n$ degrees of freedom. $m$ is the number of the data points and $n$ is the number of coefficients in our fitted model.
+If the fitted model behaves similar to the saturated model, then the deviance can be well approximated by a chi-squared distribution with $m-n$ degrees of freedom. $m$ is the number of the data points and $n$ is the number of coefficients in our fitted model.
 
 ---
 
@@ -344,9 +334,9 @@ $$H_{\alpha}:\text{the fitted model is not equivalent to the saturated model}$$
 ## Goodness of Fit
 ### Saturated Model
 
-`logit$deviance` is the deviance between saturated model and fitted model.
+`logit$deviance` is the deviance between the saturated model and fitted model.
 
-`logit$df.residual` is equal to number of observations minus the number of coefficients in the fitted model. 
+`logit$df.residual` is equal to the number of observations minus the number of coefficients in the fitted model. 
 
 Using this, we can calculate the p value for the hypothesis test above.
 
@@ -390,9 +380,9 @@ In the limit of large data, it is known that the deviance follows a chi-squared 
 ### Null Model
 
 
-`logit$deviance` is the deviance between saturated model and fitted model. `logit$df.residual` is equal to number of observations minus the number of coefficients in the fitted model. 
+`logit$deviance` is the deviance between the saturated model and fitted model. `logit$df.residual` is equal to the number of observations minus the number of coefficients in the fitted model. 
 
-`logit$null.deviance` is the deviance between saturated model and the null model. `logit$df.null` is the number of observations minus 1.
+`logit$null.deviance` is the deviance between the saturated model and the null model. `logit$df.null` is the number of observations minus 1.
 
 ---
 
@@ -418,7 +408,7 @@ Since the p value is less than one, we reject our null hypothesis. (This is a go
 ## Goodness of Fit
 ### Anova 
 
-`anova` with argument `test="Chisq"` allows us to compare change in deviance after sequencially adding terms our model.
+`anova` with argument `test="Chisq"` allows us to compare change in deviance after sequentially adding terms our model.
 
 \tiny
 
@@ -435,20 +425,14 @@ anova(logit,test="Chisq")
 
 # Poisson Generalized Linear Model
 
-A possion GLM is used to study *count* data (i.e. discrete numbers, $0,1,2,\cdots$). *Count* data describes the number of events that occur within a given time frame.
-
-insert plot of poisson distribution here
-```{r}
-
-
-```
+A Poisson GLM is used to study *count* data (i.e. discrete numbers, $0,1,2,\cdots$). *Count* data describes the number of events that occur within a given time frame.
 
 
 ---
 
 # Poisson Generalized Linear Model
 
-A possion GLM is most useful when studying data in which the mean and variance are approximately equal. If they are not not equal, the standard error of the model terms must adjusted to account for the assumption violation.
+A Poisson GLM is most useful when studying data in which the mean and variance are approximately equal. If they are not not equal, the standard error of the model terms must adjusted to account for the assumption violation.
 
 
 ---
@@ -457,7 +441,7 @@ A possion GLM is most useful when studying data in which the mean and variance a
 
 Poisson Regression has the following components:
 
--  response count variables, $Y_i$, that follows a Possion distribution with mean $\mu_i$
+-  response count variables, $Y_i$, that follows a Poisson distribution with mean $\mu_i$
 - a systematic component, $\eta_i$, that relates the explanatory variables,
 $\eta_i = \sum_{j=1}^{n} \beta_j x_{ij}$
 - a link function, $log(\mu_i) = \sum_{j=1}^{n} \beta_j x_{ij}$
@@ -493,7 +477,7 @@ summary(bioChemists)
 - *fem* - gender
 - *mar* - martial status
 - *kid5* - number of children less than 5
-- *phd* - pretige of PhD program
+- *phd* - prestige of PhD program
 - *ment* - number of articles of the mentor in the last 3 years
 
 ---
@@ -537,13 +521,13 @@ ggplot(bioChemists,aes(x=bioChemists$art))+
 
 # Poisson Generalized Linear Model
 ## Data
-We can "quantify" the Poission-ness by analyzing the mean and variance of the data.
+We can "quantify" the Poisson-ness by analyzing the mean and variance of the data.
 ```{r}
 mean(bioChemists$art)
 var(bioChemists$art)
 ```
 
-Although mean and variance are not equal, we will still fit it to Poisson distribution. 
+Although mean and variance are not equal, we will still fit it to a Poisson model. 
 
 ---
 
@@ -924,9 +908,35 @@ anova(poisson_model,test="Chisq")
 
 ---
 
+##  Quasi-Poisson Regression with continuous variables, mentor articles and martial status
+
+If the process that generated our data does not have mean and variable equal to each other, we can assume that the variance is approximately the mean multiplied by some constant. This constant is called the dispersion parameter.
+
+\pause{Fitting the data with this scaled relationship between the mean and the variance does not change the coefficient estimates. It however adjusts the standard errors and the p values.}
+
+\pause{The Poisson model with the assumption that the variance is equal to the mean multiplied by some constant is called `Quasi-Poisson`.}
+
+\pause{To fit our data to a `Quasi-Poisson` model, set `family = quasipoisson(link=log)`}
+
+---
+
+
+##  Quasi-Poisson Regression with continuous variables, mentor articles and martial status
+
+\tiny
+```{r,out.width='30%'}
+poisson_model = glm(art ~ 1 + ment +mar,
+                    family=quasipoisson(link=log),data=bioChemists)
+summary(poisson_model)
+```
+\normalsize
+
+---
+
+
 # Log-Linear Regression
 
-Contingency table displays number of observations for a given combination of factors.
+Contingency table displays the number of observations for a given combination of factors.
 
 ```{r,echo=FALSE, results='asis'}
 library(knitr)
@@ -943,11 +953,11 @@ kable(table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary))
 
 ```
 
-\pause{Log-linear model model the group mean count of each cell of the contingency table} 
+\pause{Log-linear models estimate the group mean count of each cell of the contingency table} 
 
 \pause{Log-linear models allow us to model association between two or more variables.}
 
-\pause{There are no well defined explanatory/response variables. This is because we are more focused on the interaction between two variables.}
+\pause{There are no well defined explanatory/response variables in the contingency table. This allows us to focus on the interaction between variables.}
 
 
 ---
@@ -957,7 +967,7 @@ kable(table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary))
 
 Contingency table displays number of observations for all combinations of levels of given discrete variables.
 
-We would like to learn a contigency table for the `biochemist` data set using number of articles published, number of mentor articles published and number of children.
+We would like to learn a contingency table for the `biochemist` data set using number of articles published, number of mentor articles published and number of children.
 
 First, we discretize our continuous variables.
 
@@ -987,7 +997,7 @@ table(art_relative=bioChemists$art_binary)
 ```
 \normalsize
 
-This one-way contigency table shows that:
+This one-way contingency table shows that:
 
 - there are 521 biochemists with 1 or less papers
 - there are 394 biochemists with greater than 1 papers.
@@ -1007,7 +1017,7 @@ table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary)
 ```
 \normalsize
 
-This two-way contigency table shows that:
+This two-way contingency table shows that:
 
 - there are 321 biochemists with 1 or less papers and with a mentor that produced less than or equal to 6 papers
 - there are 200 biochemists with 1 or less papers and with a mentor that produced more than 6 papers
@@ -1050,7 +1060,7 @@ table(art_relative=bioChemists$art_binary,ment=bioChemists$ment_binary,
 ## Contingency Table
 ### Three-Way Contingency Table
 
-This three-way contigency table shows that:
+This three-way contingency table shows that:
 
 * With no children, 
     * there are 208 biochemists with 1 or less papers and with a mentor that produced less than or equal to 6 papers
@@ -1062,9 +1072,9 @@ This three-way contigency table shows that:
 
 ## Independent Model for two-way contigency table
 
-Remember, using a log-linear model, our primary goal is to learn the interaction effects between covariates.  
+Remember using a log-linear model, our primary goal is to learn the interaction effects between covariates.  
 
-Again, we build the same two-way contingency table. We need to convert the contigency table in a form that is acceptable to `glm`. 
+Again, we build the same two-way contingency table. We need to convert the contingency table in a form that is acceptable to `glm`. 
 
 
 ```{r}
@@ -1202,7 +1212,7 @@ anova(log_linear_model_int,log_linear_model_sat,
 ```
 \normalsize
 
-From `anova`, we can see that the saturated model provides a statisically significant result.
+From `anova`, we can see that the saturated model provides a statistically significant result.
 
 
 ---
@@ -1228,7 +1238,7 @@ Adding `art_relative:ment` to the independent model caused significant decrease 
 
 ## Independent Model for the three-way contingency table 
 
-Again, we build the same three-way contingency table. We need to convert the contigency table in a form that is acceptable to `glm`. 
+Again, we build the same three-way contingency table. We need to convert the contingency table in a form that is acceptable to `glm`. 
 
 ```{r,echo=FALSE}
 contigency_table = table(art_relative=bioChemists$art_binary,
@@ -1328,7 +1338,7 @@ anova(log_linear_model_int,log_linear_model_sat,test='Chisq')
 ```
 \normalsize
 
-From `anova`, we can see that the saturated model provides a statisically significant result.
+From `anova`, we can see that the saturated model provides a statistically significant result.
 
 ---
 
@@ -1394,9 +1404,7 @@ Hierarchical models are in order!
 
 \tiny
 ```{r}
-xyplot(mathach ~ ses | as.factor(id), subset,
-       col.line = 'black',
-       type = c("p", "r"),
+xyplot(mathach ~ ses | as.factor(id), subset, col.line = 'black', type = c("p", "r"),
        main = 'Variability in Math Achievement ~ SES Relationship')
 ```  
 \normalsize
@@ -1409,9 +1417,7 @@ Smoothing instead of regression lines.
 
 \tiny
 ```{r}
-xyplot(mathach ~ ses |as.factor(id), subset,
-                        col.line = 'black',
-                        type = c("p", "smooth"),
+xyplot(mathach ~ ses |as.factor(id), subset, col.line = 'black',type = c("p", "smooth"),
                         main = 'Variability in Math Achievement ~ SES Relationship')
 ```
 \normalsize
@@ -1486,7 +1492,7 @@ confint(random_intercept_fixed_slope)
 
 In `lme()`, the random effects go after `ramdom =`. Again, the `1` stands for the intercept and `|` goes before the grouping variable.
 
-\small
+\tiny
 ```{r}
 random_intercept_fixed_slope_2 <- lme(mathach ~ 1 + groupmeanSES,
                                       random = ~ 1 | id, data = data)

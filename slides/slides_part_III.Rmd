@@ -5,7 +5,7 @@ output:
 ---
 # Load Packages 
 
-Again, we must load the packages that will be used in the first part of this workshop.
+Again, we must load the packages that will be used in the third part of this workshop.
 
 
 ```{r, message=FALSE, warning=FALSE }
@@ -28,26 +28,27 @@ library(MASS, quietly = TRUE)
 
 # Introduction 
 
-Survival models concerns the analysis of the time for an event to occur. The response variable is the time for the event to occur. The event is generally called "death."
+Survival models concerns the analysis of the time for an event to occur. 
+
+The response variable is the "time" at which the event of concern occurred. The event is generally called "death."
 
 ---
 
 ## Definitions
 
-Survival models involve two functions:
+Survival models involve three functions:
 
-- $S(t)$: the survival function. 
-$S(t)$ is probability that death has not occurred until after time, $t$.
+- \pause{$S(t)$: the survival function. 
+$S(t)$ is probability that death has not occurred until after time, $t$.}
 
-- $\lambda(t)$: the hazard function. 
+- \pause{$\lambda(t)$: the hazard function. This is a measure of risk of an event occurring at time, $t$.
 \begin{align*}
 \lambda(t) &= \frac{\text{probability of dying at time, } t}{\text{probability of survival until time, } t} \\
 &\approx \frac{\text{number of people who died at time, } t}{\text{number of people who lived until time, } t}
 \end{align*}
+}
 
-$\lambda(t)$ is a measure of *risk*.
-
-- $\Lambda(t)$: the cumulative hazard. It is total hazard from $0$ to time, $t$.
+- \pause{$\Lambda(t)$: the cumulative hazard. It is total hazard from $0$ to time, $t$.}
 
 ---
 
@@ -68,7 +69,7 @@ $$ S(t) =\exp\left(-\Lambda(t)\right) = \exp\left(-\int_0^t \lambda(t)\, dt\righ
 
 ## Censoring
 
-Like most models, survival models suceptible to imperfect data. Let's say a subject is recorded for a study up until a time, $t^{\ast}$. 
+Like most models, survival models are susceptible to imperfect data. Let's say a subject is recorded for a study up until a time, $t^{\ast}$. 
 
 \pause{After time $t^{\ast}$, the subject may decide not to continue with study or it is not possible to locate the subject. This subject is called *censored*. Many things could have caused a lack of follow up. }
 
@@ -169,9 +170,10 @@ sapply(colon_subset_recurrence,class)
 
 Many discrete variables are stored as `numeric` variables. We have to convert these columns to factors. 
 
- To do the conversion, we use the `factor` function. The `factor` takes as arguments:
+ 
+To do the conversion, we use the `factor` function. The `factor` takes as arguments:
 
-- the dicrete data in the first argument
+-  the discrete data in the first argument
 - `level` is current coding the discrete data. This is an optional argument. 
 - `label` is the encoding that you would like to change to discrete data. This is an optional argument. Use this argument if you would to change the labeling of the discrete data. 
 
@@ -229,7 +231,10 @@ head(colon_subset_recurrence)
 
 ## Surv Object
 
-In order to survival model functions in R, time and censoring status data must be packaged together using `Surv` function. The `Surv` function takes as input the time and censoring status (0 or 1) of a data point. It returns a object that packages together time and censoring status. 
+In order to use survival model functions in R, time and censoring status data must be packaged together using `Surv` function.
+
+The `Surv` function takes as input the time and censoring status (0 or 1) of a data point. It returns a object that packages together time and censoring status. 
+
 
 ```{r}
 surv <-with(colon_subset_recurrence, Surv(time,status))
@@ -244,12 +249,29 @@ The `+` at the end of the time indicates that the data point was censored.
 
 First, let $t_i$ be the $i$th recorded time in the data. That is, $t_1$ is the $1$st recorded time, $t_2$ is the $2$nd recorded time, ..., $t_{20}$ is the $20$th recorded, etc.
 
- Kalpan-Meier assumes that the survival function can be estimated as 
+ Kalpan-Meier estimator assumes that the survival function can be estimated as 
  
  $$ \hat{S}(t) = \prod_{\text{for }i:\, t_i \leq t}\left(1-\frac{d_i}{n_i}\right) $$
  where $d_i$ is the number of persons that "died" after time $t_i$ and $n_i$ is the number of uncensored persons that have lived up to $t_i$.
  
+ $\hat{S}(t)$ is the maximum likelihood estimator of $S(t)$.
+ 
+ 
 ---
+
+# Kalpan-Meier Estimator
+
+
+$\hat{S}(t)= \prod_{\text{for }i:\, t_i \leq t}\left(1-\frac{d_i}{n_i}\right)$ in layman's terms:
+
+- \pause{for all observed times, $t_i$, less than $t$,}
+- \pause{compute $1-d_i/n_i$. This is an estimate probability of surviving at time $t_i$, given that you've live greater than $t_i$}
+- \pause{take the product of all computed  $1-d_i/n_i$}
+- \pause{the product is an estimate of surviving for all observed times less than and equal to t or, more simply, surviving until t}
+
+
+---
+
 
 ##  Kalpan-Meier Estimator for the entire data
 
@@ -275,9 +297,10 @@ summary(km_fit,times=c(1,10,20,30,40,50))
 
 ##  Kalpan-Meier Estimator for the entire data
 
-There is a convience function `ggsurvplot` that generates a plot for a `survfit` object. 
+There is a convenience function `ggsurvplot` that generates a plot for a `survfit` object. 
 
 ggsurvplot takes as argument:
+
 - the first argument is the `survfit` object
 - `data` is the dataframe used to learn the `survfit` object
 - `conf.int = TRUE` -- this shows the confidence interval around the estimate. 
@@ -488,8 +511,8 @@ survdiff(surv~adhere + obstruct,data=colon_subset_recurrence)
 
 In the limit of large data, the Kaplan-Meier estimator converges to true survival function. However, the Kaplan-Meier has two disadvantages:
 
-- it cannot effectively accomodate continuous data
-- it is non-parameteric -- this means that given a data point, we cannot predict their life trajectory from data. This will be seen more clearly later in this section.
+- it cannot effectively accommodate continuous covariates
+- it is non-parametric -- this means that given a data point, we cannot predict their life trajectory from data. This will be seen more clearly later in this section.
 
 ---
 
@@ -594,7 +617,7 @@ The Cox proportionality hazard model assumes that ratio of the hazards are const
 ## Cox Proportional Hazard for $X_1 = \text{surg}$
 ### Testing Proportionality Assumption
 
-To test for proportionality hazard assumption, we use the `cox.zph` function. `cox.zph` takes a `coxph` model as input and returns a p-value to determine whether the proportionality hazard assumption was voilated for each covariate. `cox.zph` tests the null hypothesis that there are no time dependent relationships in thecovariates and their effects.
+To test for proportionality hazard assumption, we use the `cox.zph` function. `cox.zph` takes a `coxph` model as input and returns a p-value to determine whether the proportionality hazard assumption was violated for each covariate. `cox.zph` tests the null hypothesis that there are no time dependent relationships in the covariates and their effects.
 
 ```{r}
 test.ph <- cox.zph(cox)
@@ -768,6 +791,8 @@ It is possible to estimate the survival curve for the Cox Proportional Model as 
 $$\lambda_0(t_i) \approx \frac{d_i}{\sum_{s \in R_i} \exp\left(\beta_1 X_{1s} + \cdots + \beta_n X_{ns}\right)} $$
 where $d_i$ is the number of deaths in at time $t_i$, $R_i$ is set of persons alive after $t_i$ and $X_{ij}$ is the $i$th explanatory variable of the $j$th person.
 
+This is called the Breslow's baseline hazard estimator.
+
 ---
 
 ## Estimating Survival Curve
@@ -787,8 +812,8 @@ subject_one <- data.frame(surg = factor('short'),
 
 Using the `survfit` function, we can generate an object which will be used for plotting.  `survfit` takes as argument:
 
-- first argment: cox proportional hazard model fit with `coxph`
-- second argment: the data point in question. It must have the same explanatory variables as the model in the first argument 
+- first argument: cox proportional hazard model fit with `coxph`
+- second argument: the data point in question. It must have the same explanatory variables as the model in the first argument 
 - `data`: the data set used to fit the `coxph` object.
 
 
@@ -852,9 +877,9 @@ $$ T_i =  T_{0i}\exp(\beta_1 X_{1i} + \cdots + \beta_n X_{ni})$$
 
 There is difference between proportional hazard models (PH) and accelerated failure time models (AFT).
 
-The effect of the covariates in PH models act multiplicately on the base hazard.
+The effect of the covariates in PH models act multiplicatively on the base hazard.
 
-However, in AFT models, these effects act multiplicately on the base time.
+However, in AFT models, these effects act multiplicatively on the base time.
 
 Despite this difference, it is possible that AFT models are also PH models.
 
@@ -869,7 +894,7 @@ We use the function, `survreg`, to fit accelerated failure time models. The argu
 - weibull models, `dist="weibull"`
 - lognormal models, `dist="lognormal"`
 
-These are fully parameteric model and are thus a suitable alterative Kaplan-Meier estimators and Cox Proportional Hazard models.
+These are fully parametric model and are thus a suitable alternative Kaplan-Meier estimators and Cox Proportional Hazard models.
 
 However, AFT assume the distribution of $T_{0i}$. This assumption determines functional form the baseline hazard and the baseline survival functions. Incorrect assumptions introduce errors in our modeling.
 
@@ -895,7 +920,7 @@ As proportional hazard model, exponential accelerated failure time models assume
 ## Exponential models
 ###  Learning Exponential models
 
-`survreg` learns the parameter value, $\lambda$, and the regression coefficients. As an example, we will be consider the model: `surv ~ 1 + surg + adhere + nodes`.
+`survreg` learns the parameter value, $\lambda$, and the regression coefficients. As an example, we will be considering the model: `surv ~ 1 + surg + adhere + nodes`.
 
 ```{r}
 survregExp <- survreg(surv ~ 1 + surg + adhere + nodes,
@@ -963,7 +988,7 @@ As proportional hazard model, Weibull accelerated failure time models assumes th
 
 `survreg` learns the parameter value, $\lambda$ and $\gamma$,and the regression coefficients.
 
-As an example, we will be consider the model: `surv ~ 1 + surg + adhere + nodes` for all the accelerated time models.
+As an example, we will be considering the model: `surv ~ 1 + surg + adhere + nodes` for all the accelerated time models.
 
 ```{r}
 survregWeibull = survreg(surv ~ 1 + surg + adhere + nodes,
@@ -1020,6 +1045,8 @@ plot(predict(survregWeibull, newdata=subject_two,
 \normalsize
 
 ---
+
+
 # Accelerated failure time models
 ## Log-normal models
 
@@ -1036,7 +1063,7 @@ The hazard and survival function of a log-normal AFT models are a bit complicate
 
 `survreg` learns the parameter value, $\lambda$ and $\gamma$,and the regression coefficients.
 
-As an example, we will be consider the model: `surv ~ 1 + surg + adhere + nodes` for all the accelerated time models.
+As an example, we will be considering the model: `surv ~ 1 + surg + adhere + nodes` for all the accelerated time models.
 
 \small
 ```{r}
