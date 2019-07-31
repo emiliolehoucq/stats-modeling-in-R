@@ -10,7 +10,7 @@ Students are expected to have knowledge of R and regression analysis.
 
 ## Packages
 
-This workshop requires packages: **pastecs, lm.beta, lmtest, foreign, lattice, lme4, nlme, survival, dplyr, ggfortify, survminer, rms, MASS.**
+This workshop requires packages: **pastecs, lm.beta, lmtest, foreign, lattice, lme4, nlme, survival, dplyr, ggfortify, survminer, rms, MASS, pscl.**
 
 ## Presentation
 
